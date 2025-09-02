@@ -1,0 +1,62 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def bresenham(x0, y0, x1, y1):
+    pontos = []
+    deltax = abs(x1 - x0)
+    deltay = abs(y1 - y0)
+    sx = 1 if x1 > x0 else -1
+    sy = 1 if y1 > y0 else -1
+    x, y = x0, y0
+
+    if deltax > deltay:
+        e = 2 * deltay - deltax
+        for _ in range(deltax + 1):
+            pontos.append((x, y))
+            if e >= 0:
+                y += sy
+                e -= 2 * deltax
+            x += sx
+            e += 2 * deltay
+    else:
+        e = 2 * deltax - deltay
+        for _ in range(deltay + 1):
+            pontos.append((x, y))
+            if e >= 0:
+                x += sx
+                e -= 2 * deltay
+            y += sy
+            e += 2 * deltax
+
+    return pontos
+
+# ---- Configurar malha ----
+linhas = 15
+colunas = 15
+tela = np.ones((linhas, colunas))  # fundo branco
+
+# Obter pontos da linha
+pontos = bresenham(1, 2, 6, 4)  # linha de (1,2) a (6,4) - (x0, y0, x1, y1)
+for x, y in pontos:
+    tela[y, x] = 0  # pixel preto
+
+# Plotar malha
+fig, ax = plt.subplots()
+ax.imshow(tela, cmap='gray', origin='lower')
+
+# Linhas da malha
+for i in range(linhas + 1):
+    ax.axhline(i - 0.5, color='black', linewidth=0.5)
+for j in range(colunas + 1):
+    ax.axvline(j - 0.5, color='black', linewidth=0.5)
+
+# Valores nos eixos com mais espaço
+offset = 1.0
+for i in range(linhas):
+    ax.text(-offset, i, f"{i}", ha='right', va='center', fontsize=8, color='black')
+for j in range(colunas):
+    ax.text(j, -offset, f"{j}", ha='center', va='top', fontsize=8, color='black')
+
+ax.set_xticks([])
+ax.set_yticks([])
+plt.show()
