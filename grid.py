@@ -1,6 +1,6 @@
 # grid.py
 from tkinter import *
-import math
+import math # Importa a biblioteca de matemática
 
 class Grid:
   def __init__(self, tamanho_tela, tamanho_matriz=50):
@@ -16,13 +16,11 @@ class Grid:
         self.matriz.append(linha)
 
     self.master = Tk()
-    self.master.title("Bresenham Interativo")
+    self.master.title("Sistema de Computação Gráfica")
     self.tela = Canvas(self.master,
                        width=self.tamanho_tela,
                        height=self.tamanho_tela,
-                       bg="white") # Fundo branco
-    # A linha abaixo foi movida para o main.py para melhor controle do layout
-    # self.tela.pack()
+                       bg="white")
     self.CriarTemplate()
 
   def CriarTemplate(self):
@@ -41,13 +39,22 @@ class Grid:
     real_y = int((self.tamanho_tela / 2) - (self.tamanho_pixel * y))
     return real_x, real_y
 
-  # NOVA FUNÇÃO: Converte coordenadas do clique (pixels) para coordenadas da malha
+  # >>> FUNÇÃO CORRIGIDA AQUI <<<
   def converter_para_coordenadas_grid(self, event_x, event_y):
+      """Converte coordenadas do clique (em pixels) para as coordenadas da malha com precisão."""
       centro = self.tamanho_tela / 2
-      grid_x = (event_x - centro) / self.tamanho_pixel
-      grid_y = (centro - event_y) / self.tamanho_pixel
-      # Arredonda para o inteiro mais próximo para "encaixar" na célula
-      return round(grid_x), round(grid_y)
+      
+      # Usamos math.floor para garantir que a coordenada caia dentro da célula correta,
+      # em vez de arredondar para a mais próxima.
+      grid_x = math.floor((event_x - centro) / self.tamanho_pixel)
+      grid_y = math.floor((centro - event_y) / self.tamanho_pixel)
+      
+      # Precisamos de um pequeno ajuste para o eixo Y devido à inversão de coordenadas.
+      # Se o clique for exatamente na linha do eixo X, ele pode ficar deslocado.
+      if event_y >= centro:
+          grid_y = math.ceil((centro - event_y) / self.tamanho_pixel)
+
+      return int(grid_x), int(grid_y)
 
   def converter_coordenadas_matriz(self, x, y):
     coluna = int(x + (self.tamanho_matriz / 2))
