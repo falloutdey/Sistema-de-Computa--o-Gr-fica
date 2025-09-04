@@ -11,51 +11,56 @@ from curvas import Curvas
 from preenchimentoRecursivo import PreenchimentoRecursivo
 from varredura import Varredura
 from recorteLinha import RecorteLinha
+from recortePoligono import RecortePoligono
 
-# --- Variáveis Globais de Estado ---
+# --- Bloco 1: Definição de Variáveis e Funções ---
 pontos_selecionados = []
 poligono_para_preencher = []
 janela_de_recorte = {}
 estado_preenchimento = "desenhando_poligono"
 estado_recorte = "definindo_janela"
 
-# --- Funções de Lógica ---
 def handle_grid_click(event):
     global pontos_selecionados
     grid_x, grid_y = tela.converter_para_coordenadas_grid(event.x, event.y)
     modo = current_mode.get()
     
-    if not pontos_selecionados and modo not in ["preenchimento", "recorte"]:
+    if not pontos_selecionados and modo not in ["preenchimento", "recorte_linha", "recorte_poligono"]:
         tela.limpar_tela()
 
     max_points = {"linha": 2, "circulo": 2, "elipse": 3}
     if modo in max_points and len(pontos_selecionados) >= max_points[modo]:
         limpar_tudo(manter_desenho=False)
 
-    if modo == "recorte":
+    if modo == "recorte_linha":
         if estado_recorte == "definindo_janela":
             if len(pontos_selecionados) >= 2: limpar_tudo(manter_desenho=False)
-            pontos_selecionados.append((grid_x, grid_y))
-            tela.desenhar_pixel(grid_x, grid_y, "red")
+            pontos_selecionados.append((grid_x, grid_y)); tela.desenhar_pixel(grid_x, grid_y, "red")
             if len(pontos_selecionados) == 1:
-                entry_xmin.delete(0, tk.END); entry_xmin.insert(0, str(grid_x))
-                entry_ymin.delete(0, tk.END); entry_ymin.insert(0, str(grid_y))
+                entry_xmin.delete(0, tk.END); entry_xmin.insert(0, str(grid_x)); entry_ymin.delete(0, tk.END); entry_ymin.insert(0, str(grid_y))
             elif len(pontos_selecionados) == 2:
-                entry_xmax.delete(0, tk.END); entry_xmax.insert(0, str(grid_x))
-                entry_ymax.delete(0, tk.END); entry_ymax.insert(0, str(grid_y))
+                entry_xmax.delete(0, tk.END); entry_xmax.insert(0, str(grid_x)); entry_ymax.delete(0, tk.END); entry_ymax.insert(0, str(grid_y))
         elif estado_recorte == "definindo_linha":
             if len(pontos_selecionados) >= 2:
-                limpar_tudo(manter_desenho=True, limpar_apenas_pontos=True)
-                tela.destacar_janela(**janela_de_recorte)
-            pontos_selecionados.append((grid_x, grid_y))
-            tela.desenhar_pixel(grid_x, grid_y, "blue")
+                limpar_tudo(manter_desenho=True, limpar_apenas_pontos=True); tela.destacar_janela(**janela_de_recorte)
+            pontos_selecionados.append((grid_x, grid_y)); tela.desenhar_pixel(grid_x, grid_y, "blue")
             if len(pontos_selecionados) == 1:
-                entry_x0_recorte.delete(0, tk.END); entry_x0_recorte.insert(0, str(grid_x))
-                entry_y0_recorte.delete(0, tk.END); entry_y0_recorte.insert(0, str(grid_y))
+                entry_x0_recorte.delete(0, tk.END); entry_x0_recorte.insert(0, str(grid_x)); entry_y0_recorte.delete(0, tk.END); entry_y0_recorte.insert(0, str(grid_y))
             elif len(pontos_selecionados) == 2:
-                entry_x1_recorte.delete(0, tk.END); entry_x1_recorte.insert(0, str(grid_x))
-                entry_y1_recorte.delete(0, tk.END); entry_y1_recorte.insert(0, str(grid_y))
+                entry_x1_recorte.delete(0, tk.END); entry_x1_recorte.insert(0, str(grid_x)); entry_y1_recorte.delete(0, tk.END); entry_y1_recorte.insert(0, str(grid_y))
                 desenhar_linha_original_para_recorte()
+    elif modo == "recorte_poligono":
+        if estado_recorte == "definindo_janela":
+            if len(pontos_selecionados) >= 2: limpar_tudo(manter_desenho=False)
+            pontos_selecionados.append((grid_x, grid_y)); tela.desenhar_pixel(grid_x, grid_y, "red")
+            if len(pontos_selecionados) == 1:
+                entry_xmin_p.delete(0, tk.END); entry_xmin_p.insert(0, str(grid_x)); entry_ymin_p.delete(0, tk.END); entry_ymin_p.insert(0, str(grid_y))
+            elif len(pontos_selecionados) == 2:
+                entry_xmax_p.delete(0, tk.END); entry_xmax_p.insert(0, str(grid_x)); entry_ymax_p.delete(0, tk.END); entry_ymax_p.insert(0, str(grid_y))
+        elif estado_recorte == "definindo_poligono":
+            pontos_selecionados.append((grid_x, grid_y)); 
+            atualizar_texto_pontos()
+            desenhar_poligono_original_para_recorte()
     elif modo == "preenchimento":
         if estado_preenchimento == "escolhendo_semente":
             if not ponto_esta_dentro((grid_x, grid_y), poligono_para_preencher): messagebox.showwarning("Ponto Inválido", "O ponto de semente deve estar DENTRO do polígono."); return
@@ -98,19 +103,23 @@ def ponto_esta_dentro(ponto, poligono):
     return dentro
 
 def add_point_from_entry():
-    global pontos_selecionados; modo=current_mode.get(); entry_map={"polilinha":(entry_p_x_pv,entry_p_y_pv),"varredura":(entry_p_x_varredura,entry_p_y_varredura),"curva":(entry_p_x_curva,entry_p_y_curva),"preenchimento":(entry_p_x_preenchimento,entry_p_y_preenchimento)}
+    global pontos_selecionados; modo = current_mode.get()
+    entry_map={"polilinha":(entry_p_x_pv,entry_p_y_pv),"varredura":(entry_p_x_varredura,entry_p_y_varredura),"curva":(entry_p_x_curva,entry_p_y_curva),"preenchimento":(entry_p_x_preenchimento,entry_p_y_preenchimento),"recorte_poligono":(entry_p_x_recorte_p,entry_p_y_recorte_p)}
     if modo not in entry_map: return
     entry_x, entry_y = entry_map[modo]
     try: x=int(entry_x.get()); y=int(entry_y.get())
     except ValueError: messagebox.showerror("Entrada Inválida", "As coordenadas do ponto devem ser números inteiros."); return
-    if not pontos_selecionados: tela.limpar_tela()
+    if not pontos_selecionados and modo not in ["preenchimento", "recorte_linha", "recorte_poligono"]: tela.limpar_tela()
     pontos_selecionados.append((x, y)); cor="blue"
     if modo=="varredura": cor="magenta"
     elif modo=="curva":
         if len(pontos_selecionados)==1: cor="green"
         else: cor="red"
-    tela.desenhar_pixel(x,y,cor)
-    if modo=="curva" and len(pontos_selecionados)>2: p_anterior=pontos_selecionados[-2]; tela.desenhar_pixel(p_anterior[0],p_anterior[1],"orange")
+    if modo == "recorte_poligono":
+        desenhar_poligono_original_para_recorte()
+    else:
+        tela.desenhar_pixel(x,y,cor)
+        if modo=="curva" and len(pontos_selecionados)>2: p_anterior=pontos_selecionados[-2]; tela.desenhar_pixel(p_anterior[0],p_anterior[1],"orange")
     atualizar_texto_pontos(); entry_x.delete(0,tk.END); entry_y.delete(0,tk.END)
 
 def desenhar_linha():
@@ -169,11 +178,9 @@ def executar_varredura():
 
 def finalizar_janela_de_recorte():
     global estado_recorte, janela_de_recorte
-    try:
-        x_coords = [int(entry_xmin.get()), int(entry_xmax.get())]; y_coords = [int(entry_ymin.get()), int(entry_ymax.get())]
+    try: x_coords = [int(entry_xmin.get()), int(entry_xmax.get())]; y_coords = [int(entry_ymin.get()), int(entry_ymax.get())]
     except ValueError: messagebox.showerror("Entrada Inválida", "As coordenadas da janela devem ser números inteiros."); return
     xmin, xmax = min(x_coords), max(x_coords); ymin, ymax = min(y_coords), max(y_coords)
-    # --- CORREÇÃO AQUI ---
     janela_de_recorte = {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
     tela.limpar_tela(); tela.destacar_janela(**janela_de_recorte)
     estado_recorte = "definindo_linha"; pontos_selecionados.clear(); switch_clip_state()
@@ -181,28 +188,48 @@ def finalizar_janela_de_recorte():
 def desenhar_linha_original_para_recorte():
     try: p1 = (int(entry_x0_recorte.get()), int(entry_y0_recorte.get())); p2 = (int(entry_x1_recorte.get()), int(entry_y1_recorte.get()))
     except ValueError: return
-    linha_original = Bresenham(p1, p2)
-    tela.desenhar(linha_original.saida, 'lightgrey')
+    linha_original = Bresenham(p1, p2); tela.desenhar(linha_original.saida, 'lightgrey')
 
 def executar_recorte_linha():
     if not janela_de_recorte: messagebox.showwarning("Janela não Definida", "Primeiro, defina uma janela de recorte."); return
-    try:
-        p1 = (int(entry_x0_recorte.get()), int(entry_y0_recorte.get()))
-        p2 = (int(entry_x1_recorte.get()), int(entry_y1_recorte.get()))
+    try: p1 = (int(entry_x0_recorte.get()), int(entry_y0_recorte.get())); p2 = (int(entry_x1_recorte.get()), int(entry_y1_recorte.get()))
     except ValueError: messagebox.showerror("Entrada Inválida", "As coordenadas da linha devem ser números inteiros."); return
-    
+    tela.limpar_tela(); tela.destacar_janela(**janela_de_recorte)
+    recorte = RecorteLinha(p1, p2, **janela_de_recorte); tela.desenhar(recorte.saida, '#000000')
+
+def finalizar_janela_para_recorte_poligono():
+    global estado_recorte, janela_de_recorte
+    try:
+        x_coords = [int(entry_xmin_p.get()), int(entry_xmax_p.get())]; y_coords = [int(entry_ymin_p.get()), int(entry_ymax_p.get())]
+    except ValueError: messagebox.showerror("Entrada Inválida", "As coordenadas da janela devem ser números inteiros."); return
+    xmin, xmax = min(x_coords), max(x_coords); ymin, ymax = min(y_coords), max(y_coords)
+    janela_de_recorte = {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
+    tela.limpar_tela(); tela.destacar_janela(**janela_de_recorte)
+    estado_recorte = "definindo_poligono"; pontos_selecionados.clear(); atualizar_texto_pontos(); switch_clip_state()
+
+def desenhar_poligono_original_para_recorte():
     tela.limpar_tela()
     tela.destacar_janela(**janela_de_recorte)
-    recorte = RecorteLinha(p1, p2, **janela_de_recorte)
+    if len(pontos_selecionados) >= 2:
+        polilinha_original = Polilinha(pontos_selecionados, fechar=True)
+        tela.desenhar(polilinha_original.saida, 'lightgrey')
+    for ponto in pontos_selecionados:
+        tela.desenhar_pixel(ponto[0], ponto[1], "blue")
+
+def executar_recorte_poligono():
+    if not janela_de_recorte: messagebox.showwarning("Janela não Definida", "Primeiro, defina uma janela de recorte."); return
+    if len(pontos_selecionados) < 3: messagebox.showwarning("Pontos Insuficientes", "São necessários pelo menos 3 pontos para um polígono."); return
+    tela.limpar_tela(); tela.destacar_janela(**janela_de_recorte)
+    recorte = RecortePoligono(pontos_selecionados, **janela_de_recorte)
     tela.desenhar(recorte.saida, '#000000')
 
 def limpar_tudo(manter_desenho=False, limpar_apenas_pontos=False):
     global pontos_selecionados; tela.limpar_marcadores()
     if not limpar_apenas_pontos:
-        entries = [entry_x0, entry_y0, entry_x1, entry_y1, entry_cx, entry_cy, entry_raio, entry_ex, entry_ey, entry_rx, entry_ry, entry_p_x_fill, entry_p_y_fill, entry_p_x_pv, entry_p_y_pv, entry_p_x_curva, entry_p_y_curva, entry_p_x_preenchimento, entry_p_y_preenchimento, entry_p_x_varredura, entry_p_y_varredura, entry_x0_recorte, entry_y0_recorte, entry_x1_recorte, entry_y1_recorte, entry_xmin, entry_ymin, entry_xmax, entry_ymax]
+        entries = [entry_x0, entry_y0, entry_x1, entry_y1, entry_cx, entry_cy, entry_raio, entry_ex, entry_ey, entry_rx, entry_ry, entry_p_x_fill, entry_p_y_fill, entry_p_x_pv, entry_p_y_pv, entry_p_x_curva, entry_p_y_curva, entry_p_x_preenchimento, entry_p_y_preenchimento, entry_p_x_varredura, entry_p_y_varredura, entry_x0_recorte, entry_y0_recorte, entry_x1_recorte, entry_y1_recorte, entry_xmin, entry_ymin, entry_xmax, entry_ymax, entry_xmin_p, entry_ymin_p, entry_xmax_p, entry_ymax_p, entry_p_x_recorte_p, entry_p_y_recorte_p]
         for entry in entries:
             if entry.winfo_exists(): entry.delete(0, tk.END)
-        text_widgets = [texto_pontos_polilinha, texto_pontos_curva, texto_pontos_varredura, texto_pontos_preenchimento]
+        text_widgets = [texto_pontos_polilinha, texto_pontos_curva, texto_pontos_varredura, texto_pontos_preenchimento, texto_pontos_recorte_p]
         for widget in text_widgets:
             if widget.winfo_exists(): widget.config(state=tk.NORMAL); widget.delete('1.0', tk.END); widget.config(state=tk.DISABLED)
     pontos_selecionados = []
@@ -210,7 +237,7 @@ def limpar_tudo(manter_desenho=False, limpar_apenas_pontos=False):
         tela.limpar_tela()
 
 def atualizar_texto_pontos():
-    modo = current_mode.get(); widgets_map = {"polilinha": texto_pontos_polilinha, "curva": texto_pontos_curva, "varredura": texto_pontos_varredura, "preenchimento": texto_pontos_preenchimento}
+    modo = current_mode.get(); widgets_map = {"polilinha": texto_pontos_polilinha, "curva": texto_pontos_curva, "varredura": texto_pontos_varredura, "preenchimento": texto_pontos_preenchimento, "recorte_poligono": texto_pontos_recorte_p}
     if modo not in widgets_map: return
     widget = widgets_map[modo]; widget.config(state=tk.NORMAL); widget.delete('1.0', tk.END)
     for ponto in pontos_selecionados: widget.insert(tk.END, f"({ponto[0]}, {ponto[1]})\n")
@@ -220,13 +247,13 @@ def switch_mode():
     global estado_preenchimento, poligono_para_preencher, estado_recorte, janela_de_recorte
     estado_preenchimento="desenhando_poligono"; poligono_para_preencher=[]; estado_recorte="definindo_janela"; janela_de_recorte={}
     limpar_tudo(manter_desenho=False); modo = current_mode.get()
-    for frame in [frame_linha, frame_polilinha, frame_circulo, frame_elipse, frame_curva, frame_preenchimento, frame_varredura, frame_recorte]:
+    for frame in [frame_linha, frame_polilinha, frame_circulo, frame_elipse, frame_curva, frame_preenchimento, frame_varredura, frame_recorte_linha, frame_recorte_poligono]:
         frame.pack_forget()
-    frames_map = {"linha":frame_linha, "polilinha":frame_polilinha, "circulo":frame_circulo, "elipse":frame_elipse, "curva":frame_curva, "varredura":frame_varredura, "preenchimento":frame_preenchimento, "recorte":frame_recorte}
+    frames_map = {"linha":frame_linha, "polilinha":frame_polilinha, "circulo":frame_circulo, "elipse":frame_elipse, "curva":frame_curva, "varredura":frame_varredura, "preenchimento":frame_preenchimento, "recorte_linha":frame_recorte_linha, "recorte_poligono":frame_recorte_poligono}
     if modo in frames_map:
         frames_map[modo].pack(pady=10, padx=10, fill="x")
         if modo == "preenchimento": switch_fill_state()
-        elif modo == "recorte": switch_clip_state()
+        elif modo in ["recorte_linha", "recorte_poligono"]: switch_clip_state()
 
 def switch_fill_state():
     if estado_preenchimento == "desenhando_poligono":
@@ -234,21 +261,25 @@ def switch_fill_state():
     else: frame_desenho_poligono.pack_forget(); frame_escolha_semente.pack(fill="x")
     
 def switch_clip_state():
-    if estado_recorte == "definindo_janela":
-        frame_definir_janela.pack(fill="x"); frame_definir_linha.pack_forget()
-    else: frame_definir_janela.pack_forget(); frame_definir_linha.pack(fill="x")
+    modo = current_mode.get()
+    if modo == "recorte_linha":
+        if estado_recorte == "definindo_janela":
+            frame_definir_janela.pack(fill="x"); frame_definir_linha.pack_forget()
+        else: frame_definir_janela.pack_forget(); frame_definir_linha.pack(fill="x")
+    elif modo == "recorte_poligono":
+        if estado_recorte == "definindo_janela":
+            frame_definir_janela_p.pack(fill="x"); frame_definir_poligono.pack_forget()
+        else: frame_definir_janela_p.pack_forget(); frame_definir_poligono.pack(fill="x")
 
-# ===================================================================
-# Bloco 2: Criação da Interface Gráfica
-# ===================================================================
+# --- Bloco 2: Criação da Interface Gráfica ---
 tela = Grid(550)
 current_mode = tk.StringVar(master=tela.master, value="linha")
 tela.tela.bind("<Button-1>", handle_grid_click)
 tela.tela.pack(side=tk.LEFT, padx=10, pady=10)
 controls_frame_main = tk.Frame(tela.master); controls_frame_main.pack(side=tk.RIGHT, padx=10, pady=10, fill=tk.Y)
 mode_frame = ttk.LabelFrame(controls_frame_main, text="Modo de Desenho"); mode_frame.pack(pady=10, padx=10, fill="x")
-modos = ["Linha", "Polilinha", "Círculo", "Elipse", "Curva", "Preenchimento", "Varredura", "Recorte de Linha"]
-valores = ["linha", "polilinha", "circulo", "elipse", "curva", "preenchimento", "varredura", "recorte"]
+modos = ["Linha", "Polilinha", "Círculo", "Elipse", "Curva", "Preenchimento", "Varredura", "Recorte de Linha", "Recorte de Polígono"]
+valores = ["linha", "polilinha", "circulo", "elipse", "curva", "preenchimento", "varredura", "recorte_linha", "recorte_poligono"]
 for i in range(len(modos)):
     ttk.Radiobutton(mode_frame, text=modos[i], variable=current_mode, value=valores[i], command=switch_mode).pack(anchor="w")
 dynamic_controls_frame = tk.Frame(controls_frame_main); dynamic_controls_frame.pack(pady=10, padx=10, fill="both", expand=True)
@@ -259,7 +290,8 @@ frame_elipse=ttk.LabelFrame(dynamic_controls_frame, text="Controles da Elipse")
 frame_curva=ttk.LabelFrame(dynamic_controls_frame, text="Controles da Curva")
 frame_preenchimento=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Preenchimento")
 frame_varredura=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Varredura")
-frame_recorte=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Recorte de Linha")
+frame_recorte_linha=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Recorte de Linha")
+frame_recorte_poligono=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Recorte de Polígono")
 tk.Label(frame_linha, text="P1 (x0, y0)").pack(); entry_x0=tk.Entry(frame_linha, width=10); entry_x0.pack(); entry_y0=tk.Entry(frame_linha, width=10); entry_y0.pack()
 tk.Label(frame_linha, text="P2 (x1, y1)").pack(pady=(10,0)); entry_x1=tk.Entry(frame_linha, width=10); entry_x1.pack(); entry_y1=tk.Entry(frame_linha, width=10); entry_y1.pack()
 ttk.Button(frame_linha, text="Desenhar Linha", command=desenhar_linha).pack(pady=10, fill="x")
@@ -291,16 +323,27 @@ tk.Label(frame_varredura, text="Adicionar Vértice (x, y)").pack(); entry_p_x_va
 ttk.Button(frame_varredura, text="Adicionar Vértice", command=add_point_from_entry).pack(pady=5, fill="x")
 tk.Label(frame_varredura, text="Vértices do Polígono:").pack(pady=5); texto_pontos_varredura = tk.Text(frame_varredura, height=8, width=20); texto_pontos_varredura.pack(pady=5); texto_pontos_varredura.config(state=tk.DISABLED)
 ttk.Button(frame_varredura, text="Preencher com Varredura", command=executar_varredura).pack(pady=10, fill="x")
-frame_definir_janela = tk.Frame(frame_recorte)
+frame_definir_janela = tk.Frame(frame_recorte_linha)
 tk.Label(frame_definir_janela, text="1. Defina a Janela de Recorte:").pack()
 tk.Label(frame_definir_janela, text="Ponto 1 (xmin, ymin)").pack(); entry_xmin=tk.Entry(frame_definir_janela, width=10); entry_xmin.pack(); entry_ymin=tk.Entry(frame_definir_janela, width=10); entry_ymin.pack()
 tk.Label(frame_definir_janela, text="Ponto 2 (xmax, ymax)").pack(pady=(5,0)); entry_xmax=tk.Entry(frame_definir_janela, width=10); entry_xmax.pack(); entry_ymax=tk.Entry(frame_definir_janela, width=10); entry_ymax.pack()
 ttk.Button(frame_definir_janela, text="Finalizar Janela", command=finalizar_janela_de_recorte).pack(pady=10, fill="x")
-frame_definir_linha = tk.Frame(frame_recorte)
+frame_definir_linha = tk.Frame(frame_recorte_linha)
 tk.Label(frame_definir_linha, text="2. Defina a Linha a ser Recortada:").pack()
 tk.Label(frame_definir_linha, text="Ponto 1 (x0, y0)").pack(); entry_x0_recorte=tk.Entry(frame_definir_linha, width=10); entry_x0_recorte.pack(); entry_y0_recorte=tk.Entry(frame_definir_linha, width=10); entry_y0_recorte.pack()
 tk.Label(frame_definir_linha, text="Ponto 2 (x1, y1)").pack(pady=(5,0)); entry_x1_recorte=tk.Entry(frame_definir_linha, width=10); entry_x1_recorte.pack(); entry_y1_recorte=tk.Entry(frame_definir_linha, width=10); entry_y1_recorte.pack()
 ttk.Button(frame_definir_linha, text="Recortar Linha", command=executar_recorte_linha).pack(pady=10, fill="x")
+frame_definir_janela_p = tk.Frame(frame_recorte_poligono)
+tk.Label(frame_definir_janela_p, text="1. Defina a Janela de Recorte:").pack()
+tk.Label(frame_definir_janela_p, text="Ponto 1 (xmin, ymin)").pack(); entry_xmin_p=tk.Entry(frame_definir_janela_p, width=10); entry_xmin_p.pack(); entry_ymin_p=tk.Entry(frame_definir_janela_p, width=10); entry_ymin_p.pack()
+tk.Label(frame_definir_janela_p, text="Ponto 2 (xmax, ymax)").pack(pady=(5,0)); entry_xmax_p=tk.Entry(frame_definir_janela_p, width=10); entry_xmax_p.pack(); entry_ymax_p=tk.Entry(frame_definir_janela_p, width=10); entry_ymax_p.pack()
+ttk.Button(frame_definir_janela_p, text="Finalizar Janela", command=finalizar_janela_para_recorte_poligono).pack(pady=10, fill="x")
+frame_definir_poligono = tk.Frame(frame_recorte_poligono)
+tk.Label(frame_definir_poligono, text="2. Defina os Vértices do Polígono:").pack()
+tk.Label(frame_definir_poligono, text="Adicionar Ponto (x, y)").pack(); entry_p_x_recorte_p=tk.Entry(frame_definir_poligono, width=10); entry_p_x_recorte_p.pack(); entry_p_y_recorte_p=tk.Entry(frame_definir_poligono, width=10); entry_p_y_recorte_p.pack()
+ttk.Button(frame_definir_poligono, text="Adicionar Vértice", command=add_point_from_entry).pack(pady=5)
+tk.Label(frame_definir_poligono, text="Vértices:").pack(); texto_pontos_recorte_p = tk.Text(frame_definir_poligono, height=5, width=20); texto_pontos_recorte_p.pack(pady=5); texto_pontos_recorte_p.config(state=tk.DISABLED)
+ttk.Button(frame_definir_poligono, text="Recortar Polígono", command=executar_recorte_poligono).pack(pady=10, fill="x")
 ttk.Button(controls_frame_main, text="Limpar Tudo", command=lambda: limpar_tudo(manter_desenho=False)).pack(pady=10, padx=10, side="bottom", fill="x")
 switch_mode()
 tela.iniciar()
