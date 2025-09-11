@@ -1,53 +1,95 @@
 # transformacao.py
 import math
 import numpy as np
+from polilinha import Polilinha
 
 class Transformacao:
     """
-    Aplica transformações geométricas a um conjunto de vértices de um polígono.
+    Aplica transformações geométricas 2D (translação, escalonamento, rotação)
+    a uma lista de pontos.
     """
-    def __init__(self, vertices_poligono):
-        # Armazena os vértices como uma lista de listas
-        self.vertices = [list(p) for p in vertices_poligono]
+    def __init__(self, pontos: list):
+        # A entrada é a lista de pontos do objeto que será transformado.
+        self.entrada = [list(p) for p in pontos]
+        self.saida = [list(p) for p in pontos]
 
-    def transladar(self, dx, dy):
-        """Aplica uma translação."""
+    def translacao(self, dx, dy):
+        """
+        Move o objeto somando dx e dy às suas coordenadas.
+        """
         matriz_translacao = np.array([
             [1, 0, dx],
             [0, 1, dy],
             [0, 0, 1]
         ])
-        self._aplicar_matriz(matriz_translacao)
-
-    def escalonar(self, sx, sy, ponto_fixo):
-        """Aplica uma escala em relação a um ponto fixo."""
-        px, py = ponto_fixo
-        matriz_escala = (
-            np.array([[1, 0, px], [0, 1, py], [0, 0, 1]]) @
-            np.array([[sx, 0, 0], [0, sy, 0], [0, 0, 1]]) @
-            np.array([[1, 0, -px], [0, 1, -py], [0, 0, 1]])
-        )
-        self._aplicar_matriz(matriz_escala)
-
-    def rotacionar(self, angulo_graus, pivo):
-        """Aplica uma rotação em relação a um ponto de pivô."""
-        px, py = pivo
-        angulo_rad = math.radians(angulo_graus)
-        cos_a = math.cos(angulo_rad)
-        sin_a = math.sin(angulo_rad)
+        pontos_homogeneos = [np.array([p[0], p[1], 1]) for p in self.entrada]
         
-        matriz_rotacao = (
-            np.array([[1, 0, px], [0, 1, py], [0, 0, 1]]) @
-            np.array([[cos_a, -sin_a, 0], [sin_a, cos_a, 0], [0, 0, 1]]) @
-            np.array([[1, 0, -px], [0, 1, -py], [0, 0, 1]])
-        )
-        self._aplicar_matriz(matriz_rotacao)
+        pontos_transformados = []
+        for ponto in pontos_homogeneos:
+            novo_ponto = matriz_translacao @ ponto
+            # A translação entre inteiros sempre resulta em inteiros, sem necessidade de arredondar.
+            pontos_transformados.append([novo_ponto[0], novo_ponto[1]])
+        
+        self.saida = pontos_transformados
+        self.entrada = self.saida
+        
+        return self.saida
 
-    def _aplicar_matriz(self, matriz):
-        """Aplica uma matriz de transformação a todos os vértices do polígono."""
-        novos_vertices = []
-        for vertice in self.vertices:
-            ponto_homogeneo = np.array([vertice[0], vertice[1], 1])
-            ponto_transformado = matriz @ ponto_homogeneo
-            novos_vertices.append([round(ponto_transformado[0]), round(ponto_transformado[1])])
-        self.vertices = novos_vertices
+    def escalonamento(self, sx, sy, pivo=None):
+        """
+        Redimensiona o objeto em relação a um ponto pivô usando matrizes combinadas.
+        """
+        if pivo is None:
+            pivo = [0, 0]
+        
+        T_para_origem = np.array([[1, 0, -pivo[0]], [0, 1, -pivo[1]], [0, 0, 1]])
+        S = np.array([[sx, 0, 0], [0, sy, 0], [0, 0, 1]])
+        T_de_volta = np.array([[1, 0, pivo[0]], [0, 1, pivo[1]], [0, 0, 1]])
+        
+        matriz_combinada = T_de_volta @ S @ T_para_origem
+        
+        pontos_homogeneos = [np.array([p[0], p[1], 1]) for p in self.entrada]
+        
+        pontos_transformados = []
+        for ponto in pontos_homogeneos:
+            novo_ponto = matriz_combinada @ ponto
+            # O escalonamento pode gerar floats, então arredondamos aqui também.
+            pontos_transformados.append([round(novo_ponto[0]), round(novo_ponto[1])])
+        
+        self.entrada = pontos_transformados
+        self.saida = pontos_transformados
+        
+        polilinha_resultante = Polilinha(self.saida, fechar=True)
+        return polilinha_resultante.saida
+
+    def rotacao(self, angulo, pivo=None):
+        """
+        Gira o objeto em torno de um ponto pivô e arredonda o resultado final.
+        """
+        if pivo is None:
+            pivo = [0, 0]
+        
+        rad = math.radians(angulo)
+        cos_theta = math.cos(rad)
+        sin_theta = math.sin(rad)
+        
+        T_para_origem = np.array([[1, 0, -pivo[0]], [0, 1, -pivo[1]], [0, 0, 1]])
+        R = np.array([[cos_theta, -sin_theta, 0], [sin_theta,  cos_theta, 0], [0, 0, 1]])
+        T_de_volta = np.array([[1, 0, pivo[0]], [0, 1, pivo[1]], [0, 0, 1]])
+        
+        matriz_combinada = T_de_volta @ R @ T_para_origem
+        
+        pontos_homogeneos = [np.array([p[0], p[1], 1]) for p in self.entrada]
+        
+        pontos_rotacionados = []
+        for ponto in pontos_homogeneos:
+            novo_ponto = matriz_combinada @ ponto
+            # --- CORREÇÃO APLICADA AQUI ---
+            # Arredonda as coordenadas X e Y para o inteiro mais próximo.
+            pontos_rotacionados.append([round(novo_ponto[0]), round(novo_ponto[1])])
+            
+        self.entrada = pontos_rotacionados
+        self.saida = pontos_rotacionados
+        
+        polilinha_resultante = Polilinha(self.saida, fechar=True)
+        return polilinha_resultante.saida

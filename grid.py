@@ -3,35 +3,22 @@ import tkinter as tk
 import math
 
 class Grid:
-  def __init__(self, master_frame, redraw_callback=None):
-    self.master = master_frame
-    self.redraw_callback = redraw_callback
+  # ... (O resto do código da classe Grid permanece o mesmo)
+  def __init__(self, tamanho_tela, tamanho_matriz=50):
+    self.tamanho_tela = tamanho_tela
     self.matriz = []
     self.tamanho_matriz = 50
     self.meio_matriz = self.tamanho_matriz / 2
     self.cor_borda = '#000000'
 
-    self.tela = tk.Canvas(self.master, bg="white", highlightthickness=0)
-    self.tela.pack(fill=tk.BOTH, expand=True)
+    for i in range(self.tamanho_matriz):
+        linha = [0] * self.tamanho_matriz
+        self.matriz.append(linha)
 
-    self.tela.bind("<Configure>", self.on_resize)
-
-    self.tamanho_tela = 0
-    self.tamanho_pixel = 0
-
-  def on_resize(self, event):
-      novo_tamanho = min(event.width, event.height)
-      if abs(self.tamanho_tela - novo_tamanho) < 2:
-          return 
-      
-      self.tamanho_tela = novo_tamanho
-      self.tamanho_pixel = self.tamanho_tela / self.tamanho_matriz
-      
-      self.tela.config(width=self.tamanho_tela, height=self.tamanho_tela)
-      self.limpar_tela()
-
-      if self.redraw_callback:
-          self.redraw_callback()
+    self.master = tk.Tk()
+    self.master.title("Sistema de Computação Gráfica")
+    self.tela = tk.Canvas(self.master, width=self.tamanho_tela, height=self.tamanho_tela, bg="white")
+    self.CriarTemplate()
 
   def CriarTemplate(self):
     if self.tamanho_tela == 0: return

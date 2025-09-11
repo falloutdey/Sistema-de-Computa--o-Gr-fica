@@ -13,16 +13,14 @@ from preenchimentoRecursivo import PreenchimentoRecursivo
 from varredura import Varredura
 from recorteLinha import RecorteLinha
 from recortePoligono import RecortePoligono
-from transformacao import Transformacao
 
 # --- Bloco 1: Definição de Variáveis e Funções ---
 pontos_selecionados = []
-poligono_para_transformar = []
-estado_transformacao = "definindo_poligono"
 poligono_para_preencher = []
 janela_de_recorte = {}
 estado_preenchimento = "desenhando_poligono"
 estado_recorte = "definindo_janela"
+estado_transformacao = "definindo_poligono"
 
 def redesenhar_estado_atual():
     modo = current_mode.get()
@@ -63,10 +61,7 @@ def handle_grid_click(event):
     if modo in max_points and len(pontos_selecionados) >= max_points[modo]:
         limpar_tudo(manter_desenho=False)
 
-    if modo == "transformacao":
-        if estado_transformacao == "definindo_poligono":
-            pontos_selecionados.append((grid_x, grid_y)); tela.desenhar_pixel(grid_x, grid_y, "blue"); atualizar_texto_pontos()
-    elif modo == "recorte_linha":
+    if modo == "recorte_linha":
         if estado_recorte == "definindo_janela":
             if len(pontos_selecionados) >= 2: limpar_tudo(manter_desenho=False)
             pontos_selecionados.append((grid_x, grid_y)); tela.desenhar_pixel(grid_x, grid_y, "red")
@@ -135,7 +130,7 @@ def ponto_esta_dentro(ponto, poligono):
 
 def add_point_from_entry():
     global pontos_selecionados; modo = current_mode.get()
-    entry_map={"polilinha":(entry_p_x_pv,entry_p_y_pv),"varredura":(entry_p_x_varredura,entry_p_y_varredura),"curva":(entry_p_x_curva,entry_p_y_curva),"preenchimento":(entry_p_x_preenchimento,entry_p_y_preenchimento),"recorte_poligono":(entry_p_x_recorte_p,entry_p_y_recorte_p),"transformacao":(entry_p_x_transform,entry_p_y_transform)}
+    entry_map={"polilinha":(entry_p_x_pv,entry_p_y_pv),"varredura":(entry_p_x_varredura,entry_p_y_varredura),"curva":(entry_p_x_curva,entry_p_y_curva),"preenchimento":(entry_p_x_preenchimento,entry_p_y_preenchimento),"recorte_poligono":(entry_p_x_recorte_p,entry_p_y_recorte_p)}
     if modo not in entry_map: return
     entry_x, entry_y = entry_map[modo]
     try: x=int(entry_x.get()); y=int(entry_y.get())
@@ -146,12 +141,101 @@ def add_point_from_entry():
     elif modo=="curva":
         if len(pontos_selecionados)==1: cor="green"
         else: cor="red"
-    if modo == "recorte_poligono":
+    
+    if modo == "transformacao":
+        desenhar_poligono_para_transformacao()
+    elif modo == "recorte_poligono":
         desenhar_poligono_original_para_recorte()
     else:
         tela.desenhar_pixel(x,y,cor)
         if modo=="curva" and len(pontos_selecionados)>2: p_anterior=pontos_selecionados[-2]; tela.desenhar_pixel(p_anterior[0],p_anterior[1],"orange")
     atualizar_texto_pontos(); entry_x.delete(0,tk.END); entry_y.delete(0,tk.END)
+
+def desenhar_poligono_para_transformacao(cor='blue'):
+    tela.limpar_tela()
+    pontos = pontos_selecionados if estado_transformacao == "definindo_poligono" else poligono_para_transformar
+    if len(pontos) >= 2:
+        polilinha = Polilinha(pontos, fechar=True)
+        tela.desenhar(polilinha.saida, cor)
+    elif pontos:
+        for ponto in pontos:
+            tela.desenhar_pixel(ponto[0], ponto[1], cor)
+
+def finalizar_poligono_para_transformacao():
+    global estado_transformacao, poligono_para_transformar, pontos_selecionados
+    if len(pontos_selecionados) < 3:
+        messagebox.showerror("Polígono Inválido", "São necessários pelo menos 3 pontos para formar um polígono.")
+        return
+    poligono_para_transformar = list(pontos_selecionados)
+    estado_transformacao = "aplicando_transformacao"
+    switch_transform_state()
+    atualizar_texto_pontos()
+
+def aplicar_translacao():
+    global poligono_para_transformar
+    if not poligono_para_transformar: messagebox.showwarning("Nenhum Polígono", "Finalize um polígono primeiro."); return
+    try:
+        dx = int(entry_dx_transf.get())
+        dy = int(entry_dy_transf.get())
+    except ValueError: messagebox.showerror("Entrada Inválida", "Os valores de translação devem ser inteiros."); return
+    
+    transformador = Transformacao(poligono_para_transformar)
+    poligono_para_transformar = transformador.translacao(dx, dy)
+    desenhar_poligono_para_transformacao(cor='green')
+    atualizar_texto_pontos()
+
+def get_pivo_from_combobox(combobox):
+    pivo_str = combobox.get()
+    if not pivo_str:
+        messagebox.showerror("Pivô Inválido", "Por favor, selecione um ponto pivô da lista.")
+        return None
+    try:
+        numeros = re.findall(r'-?\d+\.?\d*', pivo_str)
+        return [float(numeros[0]), float(numeros[1])]
+    except (IndexError, ValueError):
+        messagebox.showerror("Pivô Inválido", f"Não foi possível ler as coordenadas do pivô: {pivo_str}")
+        return None
+
+def aplicar_escalonamento():
+    global poligono_para_transformar
+    if not poligono_para_transformar: messagebox.showwarning("Nenhum Polígono", "Finalize um polígono primeiro."); return
+    
+    pivo = get_pivo_from_combobox(combo_pivo_escalonamento)
+    if pivo is None: return
+
+    try:
+        sx = float(entry_sx_transf.get())
+        sy = float(entry_sy_transf.get())
+    except ValueError: messagebox.showerror("Entrada Inválida", "Fatores de escala devem ser números."); return
+
+    transformador = Transformacao(poligono_para_transformar)
+    pontos_transformados_rasterizados = transformador.escalonamento(sx, sy, pivo=pivo)
+    
+    tela.limpar_tela()
+    tela.desenhar(pontos_transformados_rasterizados, 'green')
+    
+    poligono_para_transformar = transformador.entrada
+    atualizar_texto_pontos()
+
+def aplicar_rotacao():
+    global poligono_para_transformar
+    if not poligono_para_transformar: messagebox.showwarning("Nenhum Polígono", "Finalize um polígono primeiro."); return
+
+    pivo = get_pivo_from_combobox(combo_pivo_rotacao)
+    if pivo is None: return
+
+    try:
+        angulo = float(entry_angulo_transf.get())
+    except ValueError: messagebox.showerror("Entrada Inválida", "O ângulo deve ser um número."); return
+
+    transformador = Transformacao(poligono_para_transformar)
+    pontos_transformados_rasterizados = transformador.rotacao(angulo, pivo=pivo)
+
+    tela.limpar_tela()
+    tela.desenhar(pontos_transformados_rasterizados, 'green')
+
+    poligono_para_transformar = transformador.entrada 
+    atualizar_texto_pontos()
 
 def desenhar_linha():
     try: p1=(int(entry_x0.get()),int(entry_y0.get())); p2=(int(entry_x1.get()),int(entry_y1.get()))
@@ -311,40 +395,61 @@ def aplicar_transformacao(tipo):
         combo_rotacao_pivo.current(0)
 
 def limpar_tudo(manter_desenho=False, limpar_apenas_pontos=False):
-    global pontos_selecionados; tela.limpar_marcadores()
+    global pontos_selecionados, poligono_para_transformar, estado_transformacao
+    tela.limpar_marcadores()
     if not limpar_apenas_pontos:
-        entries = [entry_x0, entry_y0, entry_x1, entry_y1, entry_cx, entry_cy, entry_raio, entry_ex, entry_ey, entry_rx, entry_ry, entry_p_x_fill, entry_p_y_fill, entry_p_x_pv, entry_p_y_pv, entry_p_x_curva, entry_p_y_curva, entry_p_x_preenchimento, entry_p_y_preenchimento, entry_p_x_varredura, entry_p_y_varredura, entry_x0_recorte, entry_y0_recorte, entry_x1_recorte, entry_y1_recorte, entry_xmin, entry_ymin, entry_xmax, entry_ymax, entry_xmin_p, entry_ymin_p, entry_xmax_p, entry_ymax_p, entry_p_x_recorte_p, entry_p_y_recorte_p, entry_p_x_transform, entry_p_y_transform, entry_dx, entry_dy, entry_sx, entry_sy, entry_angulo]
+        entries = [entry_x0, entry_y0, entry_x1, entry_y1, entry_cx, entry_cy, entry_raio, entry_ex, entry_ey, entry_rx, entry_ry, entry_p_x_fill, entry_p_y_fill, entry_p_x_pv, entry_p_y_pv, entry_p_x_curva, entry_p_y_curva, entry_p_x_preenchimento, entry_p_y_preenchimento, entry_p_x_varredura, entry_p_y_varredura, entry_x0_recorte, entry_y0_recorte, entry_x1_recorte, entry_y1_recorte, entry_xmin, entry_ymin, entry_xmax, entry_ymax, entry_xmin_p, entry_ymin_p, entry_xmax_p, entry_ymax_p, entry_p_x_recorte_p, entry_p_y_recorte_p]
         for entry in entries:
             if entry.winfo_exists(): entry.delete(0, tk.END)
-        text_widgets = [texto_pontos_polilinha, texto_pontos_curva, texto_pontos_varredura, texto_pontos_preenchimento, texto_pontos_recorte_p, texto_pontos_transform]
+        text_widgets = [texto_pontos_polilinha, texto_pontos_curva, texto_pontos_varredura, texto_pontos_preenchimento, texto_pontos_recorte_p]
         for widget in text_widgets:
             if widget.winfo_exists(): widget.config(state=tk.NORMAL); widget.delete('1.0', tk.END); widget.config(state=tk.DISABLED)
-        combos = [combo_escala_pivo, combo_rotacao_pivo]
-        for combo in combos:
-            if combo.winfo_exists(): combo.set(''); combo['values'] = []
     pontos_selecionados = []
+    poligono_para_transformar = []
+    estado_transformacao = "definindo_poligono"
+    if current_mode.get() == "transformacao":
+        switch_transform_state()
+
     if not manter_desenho:
         tela.limpar_tela()
 
 def atualizar_texto_pontos():
-    modo = current_mode.get(); widgets_map = {"polilinha": texto_pontos_polilinha, "curva": texto_pontos_curva, "varredura": texto_pontos_varredura, "preenchimento": texto_pontos_preenchimento, "recorte_poligono": texto_pontos_recorte_p, "transformacao": texto_pontos_transform}
+    modo = current_mode.get(); widgets_map = {"polilinha": texto_pontos_polilinha, "curva": texto_pontos_curva, "varredura": texto_pontos_varredura, "preenchimento": texto_pontos_preenchimento, "recorte_poligono": texto_pontos_recorte_p}
     if modo not in widgets_map: return
-    widget = widgets_map[modo]; widget.config(state=tk.NORMAL); widget.delete('1.0', tk.END)
-    for ponto in pontos_selecionados: widget.insert(tk.END, f"({ponto[0]}, {ponto[1]})\n")
+    
+    widget = widgets_map[modo]
+    widget.config(state=tk.NORMAL)
+    widget.delete('1.0', tk.END)
+    
+    pontos_a_exibir = pontos_selecionados if modo != "transformacao" or estado_transformacao == "definindo_poligono" else poligono_para_transformar
+    pontos_formatados = [[round(p[0], 2), round(p[1], 2)] for p in pontos_a_exibir]
+    
+    for ponto in pontos_formatados:
+        widget.insert(tk.END, f"({ponto[0]}, {ponto[1]})\n")
     widget.config(state=tk.DISABLED)
 
+    if modo == "transformacao":
+        formatted_points = [f"({p[0]}, {p[1]})" for p in poligono_para_transformar]
+        combo_pivo_escalonamento['values'] = formatted_points
+        combo_pivo_rotacao['values'] = formatted_points
+        if formatted_points:
+            combo_pivo_escalonamento.current(0)
+            combo_pivo_rotacao.current(0)
+        else:
+            combo_pivo_escalonamento.set('')
+            combo_pivo_rotacao.set('')
+
 def switch_mode():
-    global estado_preenchimento, poligono_para_preencher, estado_recorte, janela_de_recorte, estado_transformacao, poligono_para_transformar
-    estado_preenchimento="desenhando_poligono"; poligono_para_preencher=[]; estado_recorte="definindo_janela"; janela_de_recorte={}; estado_transformacao="definindo_poligono"; poligono_para_transformar=[]
+    global estado_preenchimento, poligono_para_preencher, estado_recorte, janela_de_recorte
+    estado_preenchimento="desenhando_poligono"; poligono_para_preencher=[]; estado_recorte="definindo_janela"; janela_de_recorte={}
     limpar_tudo(manter_desenho=False); modo = current_mode.get()
-    for frame in [frame_linha, frame_polilinha, frame_circulo, frame_elipse, frame_curva, frame_preenchimento, frame_varredura, frame_recorte_linha, frame_recorte_poligono, frame_transformacao]:
+    for frame in [frame_linha, frame_polilinha, frame_circulo, frame_elipse, frame_curva, frame_preenchimento, frame_varredura, frame_recorte_linha, frame_recorte_poligono]:
         frame.pack_forget()
-    frames_map = {"linha":frame_linha, "polilinha":frame_polilinha, "circulo":frame_circulo, "elipse":frame_elipse, "curva":frame_curva, "varredura":frame_varredura, "preenchimento":frame_preenchimento, "recorte_linha":frame_recorte_linha, "recorte_poligono":frame_recorte_poligono, "transformacao":frame_transformacao}
+    frames_map = {"linha":frame_linha, "polilinha":frame_polilinha, "circulo":frame_circulo, "elipse":frame_elipse, "curva":frame_curva, "varredura":frame_varredura, "preenchimento":frame_preenchimento, "recorte_linha":frame_recorte_linha, "recorte_poligono":frame_recorte_poligono}
     if modo in frames_map:
         frames_map[modo].pack(pady=10, padx=10, fill="x")
         if modo == "preenchimento": switch_fill_state()
         elif modo in ["recorte_linha", "recorte_poligono"]: switch_clip_state()
-        elif modo == "transformacao": switch_transform_state()
 
 def switch_fill_state():
     if estado_preenchimento == "desenhando_poligono":
@@ -360,12 +465,6 @@ def switch_clip_state():
         if estado_recorte == "definindo_janela": frame_definir_janela_p.pack(fill="x"); frame_definir_poligono.pack_forget()
         else: frame_definir_janela_p.pack_forget(); frame_definir_poligono.pack(fill="x")
 
-def switch_transform_state():
-    if estado_transformacao == "definindo_poligono":
-        frame_definir_poligono_trans.pack(fill="x"); frame_aplicar_transformacao.pack_forget()
-    else:
-        frame_definir_poligono_trans.pack_forget(); frame_aplicar_transformacao.pack(fill="x")
-
 # --- Bloco 2: Criação da Interface Gráfica ---
 root = tk.Tk()
 root.title("Sistema de Computação Gráfica")
@@ -380,13 +479,14 @@ controls_frame_main.pack(side=tk.RIGHT, padx=10, pady=10, fill=tk.Y)
 tela = Grid(canvas_frame, redraw_callback=redesenhar_estado_atual)
 current_mode = tk.StringVar(master=root, value="linha")
 tela.tela.bind("<Button-1>", handle_grid_click)
-
+tela.tela.pack(side=tk.LEFT, padx=10, pady=10)
+controls_frame_main = tk.Frame(tela.master); controls_frame_main.pack(side=tk.RIGHT, padx=10, pady=10, fill=tk.Y)
 mode_frame = ttk.LabelFrame(controls_frame_main, text="Modo de Desenho"); mode_frame.pack(pady=10, padx=10, fill="x")
-modos = ["Linha", "Polilinha", "Círculo", "Elipse", "Curva", "Preenchimento", "Varredura", "Recorte de Linha", "Recorte de Polígono", "Transformação"]
-valores = ["linha", "polilinha", "circulo", "elipse", "curva", "preenchimento", "varredura", "recorte_linha", "recorte_poligono", "transformacao"]
+modos = ["Linha", "Polilinha", "Círculo", "Elipse", "Curva", "Preenchimento", "Varredura", "Recorte de Linha", "Recorte de Polígono"]
+valores = ["linha", "polilinha", "circulo", "elipse", "curva", "preenchimento", "varredura", "recorte_linha", "recorte_poligono"]
 for i in range(len(modos)):
     ttk.Radiobutton(mode_frame, text=modos[i], variable=current_mode, value=valores[i], command=switch_mode).pack(anchor="w")
-dynamic_controls_frame = tk.Frame(controls_frame_main); dynamic_controls_frame.pack(pady=10, padx=10, fill="both", expand=True)
+
 frame_linha=ttk.LabelFrame(dynamic_controls_frame, text="Controles da Linha")
 frame_polilinha=ttk.LabelFrame(dynamic_controls_frame, text="Controles da Polilinha")
 frame_circulo=ttk.LabelFrame(dynamic_controls_frame, text="Controles do Círculo")
@@ -396,7 +496,6 @@ frame_preenchimento=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Pr
 frame_varredura=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Varredura")
 frame_recorte_linha=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Recorte de Linha")
 frame_recorte_poligono=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Recorte de Polígono")
-frame_transformacao=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Transformação")
 tk.Label(frame_linha, text="P1 (x0, y0)").pack(); entry_x0=tk.Entry(frame_linha, width=10); entry_x0.pack(); entry_y0=tk.Entry(frame_linha, width=10); entry_y0.pack()
 tk.Label(frame_linha, text="P2 (x1, y1)").pack(pady=(10,0)); entry_x1=tk.Entry(frame_linha, width=10); entry_x1.pack(); entry_y1=tk.Entry(frame_linha, width=10); entry_y1.pack()
 ttk.Button(frame_linha, text="Desenhar Linha", command=desenhar_linha).pack(pady=10, fill="x")
@@ -449,27 +548,6 @@ tk.Label(frame_definir_poligono, text="Adicionar Ponto (x, y)").pack(); entry_p_
 ttk.Button(frame_definir_poligono, text="Adicionar Vértice", command=add_point_from_entry).pack(pady=5)
 tk.Label(frame_definir_poligono, text="Vértices:").pack(); texto_pontos_recorte_p = tk.Text(frame_definir_poligono, height=5, width=20); texto_pontos_recorte_p.pack(pady=5); texto_pontos_recorte_p.config(state=tk.DISABLED)
 ttk.Button(frame_definir_poligono, text="Recortar Polígono", command=executar_recorte_poligono).pack(pady=10, fill="x")
-frame_definir_poligono_trans = tk.Frame(frame_transformacao)
-tk.Label(frame_definir_poligono_trans, text="1. Defina os Vértices do Polígono:").pack()
-tk.Label(frame_definir_poligono_trans, text="Adicionar Ponto (x, y)").pack(); entry_p_x_transform=tk.Entry(frame_definir_poligono_trans, width=10); entry_p_x_transform.pack(); entry_p_y_transform=tk.Entry(frame_definir_poligono_trans, width=10); entry_p_y_transform.pack()
-ttk.Button(frame_definir_poligono_trans, text="Adicionar Vértice", command=add_point_from_entry).pack(pady=5)
-tk.Label(frame_definir_poligono_trans, text="Vértices:").pack(); texto_pontos_transform = tk.Text(frame_definir_poligono_trans, height=5, width=20); texto_pontos_transform.pack(pady=5); texto_pontos_transform.config(state=tk.DISABLED)
-ttk.Button(frame_definir_poligono_trans, text="Finalizar Polígono", command=finalizar_poligono_para_transformacao).pack(pady=5, fill="x")
-frame_aplicar_transformacao = tk.Frame(frame_transformacao)
-trans_frame = ttk.LabelFrame(frame_aplicar_transformacao, text="Translação")
-trans_frame.pack(fill="x", pady=2)
-tk.Label(trans_frame, text="dx, dy").pack(); entry_dx=tk.Entry(trans_frame, width=8); entry_dx.pack(); entry_dy=tk.Entry(trans_frame, width=8); entry_dy.pack()
-ttk.Button(trans_frame, text="Transladar", command=lambda: aplicar_transformacao('translacao')).pack(pady=5)
-escala_frame = ttk.LabelFrame(frame_aplicar_transformacao, text="Escala")
-escala_frame.pack(fill="x", pady=2)
-tk.Label(escala_frame, text="sx, sy").pack(); entry_sx=tk.Entry(escala_frame, width=8); entry_sx.pack(); entry_sy=tk.Entry(escala_frame, width=8); entry_sy.pack()
-tk.Label(escala_frame, text="Ponto Fixo").pack(); combo_escala_pivo = ttk.Combobox(escala_frame, width=18, state="readonly"); combo_escala_pivo.pack()
-ttk.Button(escala_frame, text="Escalonar", command=lambda: aplicar_transformacao('escala')).pack(pady=5)
-rotacao_frame = ttk.LabelFrame(frame_aplicar_transformacao, text="Rotação")
-rotacao_frame.pack(fill="x", pady=2)
-tk.Label(rotacao_frame, text="Ângulo (graus)").pack(); entry_angulo=tk.Entry(rotacao_frame, width=8); entry_angulo.pack()
-tk.Label(rotacao_frame, text="Pivô").pack(); combo_rotacao_pivo = ttk.Combobox(rotacao_frame, width=18, state="readonly"); combo_rotacao_pivo.pack()
-ttk.Button(rotacao_frame, text="Rotacionar", command=lambda: aplicar_transformacao('rotacao')).pack(pady=5)
 ttk.Button(controls_frame_main, text="Limpar Tudo", command=lambda: limpar_tudo(manter_desenho=False)).pack(pady=10, padx=10, side="bottom", fill="x")
 switch_mode()
 root.mainloop()
