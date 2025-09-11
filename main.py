@@ -13,7 +13,7 @@ from preenchimentoRecursivo import PreenchimentoRecursivo
 from varredura import Varredura
 from recorteLinha import RecorteLinha
 from recortePoligono import RecortePoligono
-from transformacao import Transformacao 
+from transformacao import Transformacao
 from projecoes import Projetor3D
 
 # --- Bloco 1: Definição de Variáveis Globais ---
@@ -36,14 +36,14 @@ def handle_grid_click(event):
     global pontos_selecionados
     grid_x, grid_y = tela.converter_para_coordenadas_grid(event.x, event.y)
     modo = current_mode.get()
-    
+
     if not pontos_selecionados and modo not in ["preenchimento", "recorte_linha", "recorte_poligono", "projecao"]:
         tela.limpar_tela()
 
     max_points = {"linha": 2, "circulo": 2, "elipse": 3}
     if modo in max_points and len(pontos_selecionados) >= max_points[modo]:
         limpar_tudo(manter_desenho=False)
-        
+
     if modo == "transformacao":
         if estado_transformacao == "definindo_poligono":
             pontos_selecionados.append((grid_x, grid_y))
@@ -77,14 +77,14 @@ def handle_grid_click(event):
             elif len(pontos_selecionados) == 2:
                 entry_xmax_p.delete(0, tk.END); entry_xmax_p.insert(0, str(grid_x)); entry_ymax_p.delete(0, tk.END); entry_ymax_p.insert(0, str(grid_y))
         elif estado_recorte == "definindo_poligono":
-            pontos_selecionados.append((grid_x, grid_y)); 
+            pontos_selecionados.append((grid_x, grid_y));
             atualizar_texto_pontos()
             desenhar_poligono_original_para_recorte()
     elif modo == "preenchimento":
         if estado_preenchimento == "escolhendo_semente":
             if not ponto_esta_dentro((grid_x, grid_y), poligono_para_preencher): messagebox.showwarning("Ponto Inválido", "O ponto de semente deve estar DENTRO do polígono."); return
             if tela.checar_matriz(grid_x, grid_y) == '#000000': messagebox.showwarning("Ponto Inválido", "O ponto de semente não pode estar sobre uma borda."); return
-            tela.limpar_marcadores(); pontos_selecionados = [(grid_x, grid_y)]; tela.desenhar_marcador_temporario(grid_x, grid_y, "cyan") 
+            tela.limpar_marcadores(); pontos_selecionados = [(grid_x, grid_y)]; tela.desenhar_marcador_temporario(grid_x, grid_y, "cyan")
             entry_p_x_fill.delete(0, tk.END); entry_p_x_fill.insert(0, str(grid_x)); entry_p_y_fill.delete(0, tk.END); entry_p_y_fill.insert(0, str(grid_y))
         else: pontos_selecionados.append((grid_x, grid_y)); tela.desenhar_pixel(grid_x, grid_y, "blue"); atualizar_texto_pontos()
     elif modo in ["polilinha", "varredura", "curva"]:
@@ -129,20 +129,26 @@ def add_point_from_entry():
     try: x=int(entry_x.get()); y=int(entry_y.get())
     except ValueError: messagebox.showerror("Entrada Inválida", "As coordenadas do ponto devem ser números inteiros."); return
     if not pontos_selecionados and modo not in ["preenchimento", "recorte_linha", "recorte_poligono"]: tela.limpar_tela()
-    pontos_selecionados.append((x, y)); cor="blue"
-    if modo=="varredura": cor="magenta"
-    elif modo=="curva":
-        if len(pontos_selecionados)==1: cor="green"
-        else: cor="red"
-    
-    if modo == "transformacao":
+
+    pontos_selecionados.append((x, y))
+
+    if modo == "recorte_poligono":
+        if estado_recorte == "definindo_poligono":
+            atualizar_texto_pontos()
+            desenhar_poligono_original_para_recorte()
+    elif modo == "transformacao":
         desenhar_poligono_para_transformacao()
-    elif modo == "recorte_poligono":
-        desenhar_poligono_original_para_recorte()
     else:
+        cor = "blue"
+        if modo=="varredura": cor="magenta"
+        elif modo=="curva":
+            if len(pontos_selecionados)==1: cor="green"
+            else: cor="red"
         tela.desenhar_pixel(x,y,cor)
         if modo=="curva" and len(pontos_selecionados)>2: p_anterior=pontos_selecionados[-2]; tela.desenhar_pixel(p_anterior[0],p_anterior[1],"orange")
+
     atualizar_texto_pontos(); entry_x.delete(0,tk.END); entry_y.delete(0,tk.END)
+
 
 def desenhar_poligono_para_transformacao(cor='blue'):
     tela.limpar_tela()
@@ -171,7 +177,7 @@ def aplicar_translacao():
         dx = int(entry_dx_transf.get())
         dy = int(entry_dy_transf.get())
     except ValueError: messagebox.showerror("Entrada Inválida", "Os valores de translação devem ser inteiros."); return
-    
+
     transformador = Transformacao(poligono_para_transformar)
     poligono_para_transformar = transformador.translacao(dx, dy)
     desenhar_poligono_para_transformacao(cor='green')
@@ -192,7 +198,7 @@ def get_pivo_from_combobox(combobox):
 def aplicar_escalonamento():
     global poligono_para_transformar
     if not poligono_para_transformar: messagebox.showwarning("Nenhum Polígono", "Finalize um polígono primeiro."); return
-    
+
     pivo = get_pivo_from_combobox(combo_pivo_escalonamento)
     if pivo is None: return
 
@@ -203,10 +209,10 @@ def aplicar_escalonamento():
 
     transformador = Transformacao(poligono_para_transformar)
     pontos_transformados_rasterizados = transformador.escalonamento(sx, sy, pivo=pivo)
-    
+
     tela.limpar_tela()
     tela.desenhar(pontos_transformados_rasterizados, 'green')
-    
+
     poligono_para_transformar = transformador.entrada
     atualizar_texto_pontos()
 
@@ -227,7 +233,7 @@ def aplicar_rotacao():
     tela.limpar_tela()
     tela.desenhar(pontos_transformados_rasterizados, 'green')
 
-    poligono_para_transformar = transformador.entrada 
+    poligono_para_transformar = transformador.entrada
     atualizar_texto_pontos()
 
 def desenhar_linha():
@@ -237,7 +243,7 @@ def desenhar_linha():
 
 def desenhar_polilinha():
     if len(pontos_selecionados)<2: messagebox.showwarning("Pontos Insuficientes", "São necessários pelo menos 2 pontos para desenhar uma polilinha."); return
-    pontos_para_desenhar = list(pontos_selecionados); tela.limpar_tela() 
+    pontos_para_desenhar = list(pontos_selecionados); tela.limpar_tela()
     polilinha=Polilinha(pontos_para_desenhar, fechar=False); tela.desenhar(polilinha.saida,'#000000')
     for ponto in pontos_para_desenhar: tela.desenhar_pixel(ponto[0],ponto[1],"blue")
 
@@ -316,7 +322,7 @@ def finalizar_janela_para_recorte_poligono():
     estado_recorte = "definindo_poligono"; pontos_selecionados.clear(); atualizar_texto_pontos(); switch_clip_state()
 
 def desenhar_poligono_original_para_recorte():
-    limpar_tudo(manter_desenho=True, limpar_apenas_pontos=True)
+    tela.limpar_tela()
     tela.destacar_janela(**janela_de_recorte)
     if len(pontos_selecionados) >= 2:
         polilinha_original = Polilinha(pontos_selecionados, fechar=True)
@@ -335,21 +341,21 @@ def limpar_tudo(manter_desenho=False, limpar_apenas_pontos=False):
     tela.limpar_marcadores()
     if not limpar_apenas_pontos:
         entries = [entry_x0, entry_y0, entry_x1, entry_y1, entry_cx, entry_cy, entry_raio, entry_ex, entry_ey, entry_rx, entry_ry, entry_p_x_fill, entry_p_y_fill, entry_p_x_pv, entry_p_y_pv, entry_p_x_curva, entry_p_y_curva, entry_p_x_preenchimento, entry_p_y_preenchimento, entry_p_x_varredura, entry_p_y_varredura, entry_x0_recorte, entry_y0_recorte, entry_x1_recorte, entry_y1_recorte, entry_xmin, entry_ymin, entry_xmax, entry_ymax, entry_xmin_p, entry_ymin_p, entry_xmax_p, entry_ymax_p, entry_p_x_recorte_p, entry_p_y_recorte_p, entry_p_x_transf, entry_p_y_transf, entry_dx_transf, entry_dy_transf, entry_sx_transf, entry_sy_transf, entry_angulo_transf, entry_vertice_x, entry_vertice_y, entry_vertice_z, entry_distancia_proj]
-        
+
         for entry in entries:
             if entry.winfo_exists(): entry.delete(0, tk.END)
-        
+
         text_widgets = [texto_pontos_polilinha, texto_pontos_curva, texto_pontos_varredura, texto_pontos_preenchimento, texto_pontos_recorte_p, texto_pontos_transformacao, texto_vertices_3d, texto_arestas_3d]
-            
+
         for widget in text_widgets:
             if widget.winfo_exists(): widget.config(state=tk.NORMAL); widget.delete('1.0', tk.END); widget.config(state=tk.DISABLED)
 
         comboboxes = [combo_pivo_escalonamento, combo_pivo_rotacao, combo_aresta_de, combo_aresta_para]
         for combo in comboboxes:
             if combo.winfo_exists():
-                combo.set('') 
-                combo['values'] = [] 
-    
+                combo.set('')
+                combo['values'] = []
+
     pontos_selecionados = []
     poligono_para_transformar = []
     vertices_3d_selecionados = []
@@ -365,18 +371,18 @@ def limpar_tudo(manter_desenho=False, limpar_apenas_pontos=False):
 def atualizar_texto_pontos():
     modo = current_mode.get()
     widgets_map = {
-        "polilinha": texto_pontos_polilinha, "curva": texto_pontos_curva, 
-        "varredura": texto_pontos_varredura, "preenchimento": texto_pontos_preenchimento, 
+        "polilinha": texto_pontos_polilinha, "curva": texto_pontos_curva,
+        "varredura": texto_pontos_varredura, "preenchimento": texto_pontos_preenchimento,
         "recorte_poligono": texto_pontos_recorte_p, "transformacao": texto_pontos_transformacao
     }
     if modo in widgets_map:
         widget = widgets_map[modo]
         widget.config(state=tk.NORMAL)
         widget.delete('1.0', tk.END)
-        
+
         pontos_a_exibir = pontos_selecionados if modo != "transformacao" or estado_transformacao == "definindo_poligono" else poligono_para_transformar
         pontos_formatados = [[round(p[0]), round(p[1])] for p in pontos_a_exibir]
-        
+
         for ponto in pontos_formatados:
             widget.insert(tk.END, f"({ponto[0]}, {ponto[1]})\n")
         widget.config(state=tk.DISABLED)
@@ -397,14 +403,14 @@ def switch_mode():
     estado_preenchimento="desenhando_poligono"; poligono_para_preencher=[]; estado_recorte="definindo_janela"; janela_de_recorte={}; estado_transformacao = "definindo_poligono"; estado_projecao = "definindo_vertices"
     limpar_tudo(manter_desenho=False)
     modo = current_mode.get()
-    
+
     for frame in all_control_frames:
         frame.pack_forget()
-        
+
     if modo in frames_map:
         frame_ativo = frames_map[modo]
         frame_ativo.pack(pady=10, padx=10, fill="x", anchor='n')
-        
+
         if modo == "preenchimento": switch_fill_state()
         elif modo in ["recorte_linha", "recorte_poligono"]: switch_clip_state()
         elif modo == "transformacao": switch_transform_state()
@@ -414,7 +420,7 @@ def switch_fill_state():
     if estado_preenchimento == "desenhando_poligono":
         frame_desenho_poligono.pack(fill="x"); frame_escolha_semente.pack_forget()
     else: frame_desenho_poligono.pack_forget(); frame_escolha_semente.pack(fill="x")
-    
+
 def switch_clip_state():
     modo = current_mode.get()
     if modo == "recorte_linha":
@@ -449,7 +455,7 @@ def add_vertice_3d():
         y = int(entry_vertice_y.get())
         z = int(entry_vertice_z.get())
         vertices_3d_selecionados.append([x, y, z])
-        
+
         texto_vertices_3d.config(state=tk.NORMAL)
         texto_vertices_3d.delete('1.0', tk.END)
         for i, v in enumerate(vertices_3d_selecionados):
@@ -470,7 +476,7 @@ def finalizar_vertices_3d():
         messagebox.showwarning("Vértices Insuficientes", "Adicione pelo menos 2 vértices.")
         return
     estado_projecao = "definindo_arestas"
-    
+
     opcoes_vertices = [f"V{i}: ({v[0]}, {v[1]}, {v[2]})" for i, v in enumerate(vertices_3d_selecionados)]
     combo_aresta_de['values'] = opcoes_vertices
     combo_aresta_para['values'] = opcoes_vertices
@@ -518,7 +524,7 @@ def executar_projecao():
         return
 
     projetor = Projetor3D(vertices_3d_selecionados, arestas_3d_selecionadas)
-    
+
     if tipo_projecao == "Ortogonal":
         vertices_2d = projetor.projetar_ortogonal()
     elif tipo_projecao == "Cavalier":
@@ -535,11 +541,25 @@ def executar_projecao():
         except ValueError:
             messagebox.showerror("Entrada Inválida", "A distância da câmera deve ser um número.")
             return
-    
+
     projetor.rasterizar_arestas(vertices_2d)
     tela.limpar_tela()
     tela.desenhar(projetor.saida, 'black')
-        
+
+def toggle_distancia_camera(event=None):
+    # Esconde os widgets para garantir uma reordenação limpa
+    label_distancia_proj.pack_forget()
+    entry_distancia_proj.pack_forget()
+    btn_projetar_objeto.pack_forget()
+
+    # Exibe os widgets na ordem correta
+    if combo_tipo_projecao.get() == "Perspectiva":
+        label_distancia_proj.pack()
+        entry_distancia_proj.pack(pady=5)
+
+    # O botão é sempre empacotado por último para ficar na parte inferior
+    btn_projetar_objeto.pack(pady=10, fill="x", ipady=5)
+
 # --- Bloco 2: Criação da Interface Gráfica ---
 root = tk.Tk()
 root.title("Sistema de Computação Gráfica")
@@ -696,14 +716,16 @@ tk.Label(frame_definir_arestas_3d, text="Tipo de Projeção:").pack()
 combo_tipo_projecao = ttk.Combobox(frame_definir_arestas_3d, values=["Ortogonal", "Cavalier", "Cabinet", "Perspectiva"], state="readonly", width=25)
 combo_tipo_projecao.pack(pady=5)
 combo_tipo_projecao.current(0)
-tk.Label(frame_definir_arestas_3d, text="Distância Câmera (Perspectiva):").pack()
+combo_tipo_projecao.bind("<<ComboboxSelected>>", toggle_distancia_camera)
+
+label_distancia_proj = tk.Label(frame_definir_arestas_3d, text="Distância Câmera (Perspectiva):")
 entry_distancia_proj = tk.Entry(frame_definir_arestas_3d, width=27)
-entry_distancia_proj.pack(pady=5)
 entry_distancia_proj.insert(0, "20")
-ttk.Button(frame_definir_arestas_3d, text="Projetar Objeto", command=executar_projecao).pack(pady=10, fill="x", ipady=5)
+btn_projetar_objeto = ttk.Button(frame_definir_arestas_3d, text="Projetar Objeto", command=executar_projecao)
 
 
 ttk.Button(main_controls_container, text="Limpar Tudo", command=lambda: limpar_tudo(manter_desenho=False)).pack(pady=20, padx=10, ipady=10, fill='x')
 
 switch_mode()
+toggle_distancia_camera()
 root.mainloop()
