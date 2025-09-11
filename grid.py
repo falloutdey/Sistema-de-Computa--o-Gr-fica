@@ -16,7 +16,6 @@ class Grid:
         linha = [0] * self.tamanho_matriz
         self.matriz.append(linha)
     
-    # Desativa a opção de redimensionar a janela
     self.master.resizable(width=False, height=False)
     
     self.tela = tk.Canvas(self.master, width=self.tamanho_tela, height=self.tamanho_tela, bg="white")
