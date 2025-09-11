@@ -3,7 +3,6 @@ import tkinter as tk
 import math
 
 class Grid:
-  # ... (O resto do código da classe Grid permanece o mesmo)
   def __init__(self, tamanho_tela, tamanho_matriz=50):
     self.tamanho_tela = tamanho_tela
     self.matriz = []
@@ -18,6 +17,11 @@ class Grid:
 
     self.master = tk.Tk()
     self.master.title("Sistema de Computação Gráfica")
+    
+    # --- LINHA ADICIONADA AQUI ---
+    # Desativa a opção de redimensionar a janela (tanto na largura quanto na altura)
+    self.master.resizable(width=False, height=False)
+    
     self.tela = tk.Canvas(self.master, width=self.tamanho_tela, height=self.tamanho_tela, bg="white")
     self.CriarTemplate()
 
@@ -74,16 +78,10 @@ class Grid:
   def limpar_marcadores(self):
       self.tela.delete("marcador")
 
-  # --- NOVA FUNÇÃO ---
   def destacar_janela(self, xmin, ymin, xmax, ymax):
-    """Desenha um retângulo vermelho para visualizar a janela de recorte."""
-    # Converte as coordenadas da malha para coordenadas de pixel na tela
     x1_tela, y1_tela = self.converter_coordenadas(xmin, ymax)
     x2_tela, y2_tela = self.converter_coordenadas(xmax, ymin)
-    
-    # Desenha o retângulo (outline) sem preenchimento
     self.tela.create_rectangle(x1_tela, y1_tela, x2_tela, y2_tela, outline='red', width=2)
-
 
   def limpar_tela(self):
     self.tela.delete("all")
