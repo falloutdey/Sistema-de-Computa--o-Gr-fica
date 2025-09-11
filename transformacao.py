@@ -9,7 +9,6 @@ class Transformacao:
     a uma lista de pontos.
     """
     def __init__(self, pontos: list):
-        # A entrada é a lista de pontos do objeto que será transformado.
         self.entrada = [list(p) for p in pontos]
         self.saida = [list(p) for p in pontos]
 
@@ -27,7 +26,6 @@ class Transformacao:
         pontos_transformados = []
         for ponto in pontos_homogeneos:
             novo_ponto = matriz_translacao @ ponto
-            # A translação entre inteiros sempre resulta em inteiros, sem necessidade de arredondar.
             pontos_transformados.append([novo_ponto[0], novo_ponto[1]])
         
         self.saida = pontos_transformados
@@ -53,7 +51,6 @@ class Transformacao:
         pontos_transformados = []
         for ponto in pontos_homogeneos:
             novo_ponto = matriz_combinada @ ponto
-            # O escalonamento pode gerar floats, então arredondamos aqui também.
             pontos_transformados.append([round(novo_ponto[0]), round(novo_ponto[1])])
         
         self.entrada = pontos_transformados
@@ -84,8 +81,6 @@ class Transformacao:
         pontos_rotacionados = []
         for ponto in pontos_homogeneos:
             novo_ponto = matriz_combinada @ ponto
-            # --- CORREÇÃO APLICADA AQUI ---
-            # Arredonda as coordenadas X e Y para o inteiro mais próximo.
             pontos_rotacionados.append([round(novo_ponto[0]), round(novo_ponto[1])])
             
         self.entrada = pontos_rotacionados
