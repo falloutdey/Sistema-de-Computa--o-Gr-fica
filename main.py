@@ -14,8 +14,35 @@ from varredura import Varredura
 from recorteLinha import RecorteLinha
 from recortePoligono import RecortePoligono
 from transformacao import Transformacao 
+from projecoes import Projetor3D ### NOVO: Importa a classe de projeção
 
 # --- Bloco 1: Definição de Variáveis e Funções ---
+
+### NOVO: Dicionário para guardar os dados dos sólidos 3D
+objetos_3d = {
+    "Cubo": {
+        "vertices": [
+            [-5, -5, -5], [5, -5, -5], [5, 5, -5], [-5, 5, -5],
+            [-5, -5, 5], [5, -5, 5], [5, 5, 5], [-5, 5, 5]
+        ],
+        "arestas": [
+            [0, 1], [1, 2], [2, 3], [3, 0], # Face de trás
+            [4, 5], [5, 6], [6, 7], [7, 4], # Face da frente
+            [0, 4], [1, 5], [2, 6], [3, 7]  # Arestas de conexão
+        ]
+    },
+    "Pirâmide": {
+        "vertices": [
+            [-5, -5, -5], [5, -5, -5], [5, -5, 5], [-5, -5, 5], # Base
+            [0, 5, 0] # Topo
+        ],
+        "arestas": [
+            [0, 1], [1, 2], [2, 3], [3, 0], # Base
+            [0, 4], [1, 4], [2, 4], [3, 4]  # Lados
+        ]
+    }
+}
+
 pontos_selecionados = []
 poligono_para_transformar = []
 poligono_para_preencher = []
@@ -24,6 +51,36 @@ estado_preenchimento = "desenhando_poligono"
 estado_recorte = "definindo_janela"
 estado_transformacao = "definindo_poligono"
 
+### NOVO: Função para executar a projeção
+def executar_projecao():
+    nome_objeto = combo_objeto_3d.get()
+    tipo_projecao = combo_tipo_projecao.get()
+
+    if not nome_objeto or not tipo_projecao:
+        messagebox.showerror("Seleção Inválida", "Por favor, selecione um objeto e um tipo de projeção.")
+        return
+
+    dados_objeto = objetos_3d[nome_objeto]
+    projetor = Projetor3D(dados_objeto["vertices"], dados_objeto["arestas"])
+
+    if tipo_projecao == "Ortogonal - Frontal":
+        vertices_2d = projetor.projetar_ortogonal()
+    elif tipo_projecao == "Perspectiva":
+        try:
+            distancia = float(entry_distancia_proj.get())
+            if distancia <= 0:
+                messagebox.showerror("Valor Inválido", "A distância da câmera deve ser maior que zero.")
+                return
+            vertices_2d = projetor.projetar_perspectiva(distancia)
+        except ValueError:
+            messagebox.showerror("Entrada Inválida", "A distância da câmera deve ser um número.")
+            return
+    
+    projetor.rasterizar_arestas(vertices_2d)
+    tela.limpar_tela()
+    tela.desenhar(projetor.saida, 'black')
+
+# ... (todas as suas outras funções, de handle_grid_click até switch_transform_state, continuam aqui, sem alterações)
 def handle_grid_click(event):
     global pontos_selecionados
     grid_x, grid_y = tela.converter_para_coordenadas_grid(event.x, event.y)
@@ -325,26 +382,21 @@ def limpar_tudo(manter_desenho=False, limpar_apenas_pontos=False):
     global pontos_selecionados, poligono_para_transformar, estado_transformacao
     tela.limpar_marcadores()
     if not limpar_apenas_pontos:
-        entries = [entry_x0, entry_y0, entry_x1, entry_y1, entry_cx, entry_cy, entry_raio, entry_ex, entry_ey, entry_rx, entry_ry, entry_p_x_fill, entry_p_y_fill, entry_p_x_pv, entry_p_y_pv, entry_p_x_curva, entry_p_y_curva, entry_p_x_preenchimento, entry_p_y_preenchimento, entry_p_x_varredura, entry_p_y_varredura, entry_x0_recorte, entry_y0_recorte, entry_x1_recorte, entry_y1_recorte, entry_xmin, entry_ymin, entry_xmax, entry_ymax, entry_xmin_p, entry_ymin_p, entry_xmax_p, entry_ymax_p, entry_p_x_recorte_p, entry_p_y_recorte_p]
-        if 'frame_transformacao' in globals():
-            entries.extend([entry_p_x_transf, entry_p_y_transf, entry_dx_transf, entry_dy_transf, entry_sx_transf, entry_sy_transf, entry_angulo_transf])
-
+        entries = [entry_x0, entry_y0, entry_x1, entry_y1, entry_cx, entry_cy, entry_raio, entry_ex, entry_ey, entry_rx, entry_ry, entry_p_x_fill, entry_p_y_fill, entry_p_x_pv, entry_p_y_pv, entry_p_x_curva, entry_p_y_curva, entry_p_x_preenchimento, entry_p_y_preenchimento, entry_p_x_varredura, entry_p_y_varredura, entry_x0_recorte, entry_y0_recorte, entry_x1_recorte, entry_y1_recorte, entry_xmin, entry_ymin, entry_xmax, entry_ymax, entry_xmin_p, entry_ymin_p, entry_xmax_p, entry_ymax_p, entry_p_x_recorte_p, entry_p_y_recorte_p, entry_p_x_transf, entry_p_y_transf, entry_dx_transf, entry_dy_transf, entry_sx_transf, entry_sy_transf, entry_angulo_transf, entry_distancia_proj]
+        
         for entry in entries:
             if entry.winfo_exists(): entry.delete(0, tk.END)
         
-        text_widgets = [texto_pontos_polilinha, texto_pontos_curva, texto_pontos_varredura, texto_pontos_preenchimento, texto_pontos_recorte_p]
-        if 'texto_pontos_transformacao' in globals():
-            text_widgets.append(texto_pontos_transformacao)
+        text_widgets = [texto_pontos_polilinha, texto_pontos_curva, texto_pontos_varredura, texto_pontos_preenchimento, texto_pontos_recorte_p, texto_pontos_transformacao]
             
         for widget in text_widgets:
             if widget.winfo_exists(): widget.config(state=tk.NORMAL); widget.delete('1.0', tk.END); widget.config(state=tk.DISABLED)
 
-        if 'combo_pivo_escalonamento' in globals():
-            comboboxes = [combo_pivo_escalonamento, combo_pivo_rotacao]
-            for combo in comboboxes:
-                if combo.winfo_exists():
-                    combo.set('') 
-                    combo['values'] = [] 
+        comboboxes = [combo_pivo_escalonamento, combo_pivo_rotacao, combo_objeto_3d, combo_tipo_projecao]
+        for combo in comboboxes:
+            if combo.winfo_exists():
+                combo.set('') 
+                combo['values'] = [] 
     
     pontos_selecionados = []
     poligono_para_transformar = []
@@ -454,8 +506,8 @@ dynamic_controls_frame.pack(side=tk.RIGHT, anchor='n', padx=(10,0))
 mode_frame = ttk.LabelFrame(static_controls_frame, text="Modo de Desenho")
 mode_frame.pack(pady=10, padx=10)
 
-modos = ["Linha", "Polilinha", "Círculo", "Elipse", "Curva", "Preenchimento", "Varredura", "Recorte de Linha", "Recorte de Polígono", "Transformação"]
-valores = ["linha", "polilinha", "circulo", "elipse", "curva", "preenchimento", "varredura", "recorte_linha", "recorte_poligono", "transformacao"]
+modos = ["Linha", "Polilinha", "Círculo", "Elipse", "Curva", "Preenchimento", "Varredura", "Recorte de Linha", "Recorte de Polígono", "Transformação", "Projeção 3D"] ### NOVO
+valores = ["linha", "polilinha", "circulo", "elipse", "curva", "preenchimento", "varredura", "recorte_linha", "recorte_poligono", "transformacao", "projecao"] ### NOVO
 for i in range(len(modos)):
     ttk.Radiobutton(mode_frame, text=modos[i], variable=current_mode, value=valores[i], command=switch_mode).pack(anchor="w")
 
@@ -469,8 +521,9 @@ frame_varredura=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Varred
 frame_recorte_linha=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Recorte de Linha")
 frame_recorte_poligono=ttk.LabelFrame(dynamic_controls_frame, text="Controles de Recorte de Polígono")
 frame_transformacao = ttk.LabelFrame(dynamic_controls_frame, text="Controles de Transformação")
+frame_projecao = ttk.LabelFrame(dynamic_controls_frame, text="Controles de Projeção 3D") ### NOVO
 
-all_control_frames = [frame_linha, frame_polilinha, frame_circulo, frame_elipse, frame_curva, frame_preenchimento, frame_varredura, frame_recorte_linha, frame_recorte_poligono, frame_transformacao]
+all_control_frames = [frame_linha, frame_polilinha, frame_circulo, frame_elipse, frame_curva, frame_preenchimento, frame_varredura, frame_recorte_linha, frame_recorte_poligono, frame_transformacao, frame_projecao] ### NOVO
 frames_map = {val: frame for val, frame in zip(valores, all_control_frames)}
 
 # --- Widgets ---
@@ -556,7 +609,23 @@ tk.Label(frame_rotacao, text="Pivô:").pack(); combo_pivo_rotacao = ttk.Combobox
 ttk.Button(frame_rotacao, text="Aplicar", command=aplicar_rotacao).pack(pady=5)
 frame_rotacao.pack(fill="x", pady=5)
 
-ttk.Button(main_controls_container, text="Limpar Tudo", command=lambda: limpar_tudo(manter_desenho=False)).pack(pady=20, padx=10, fill='x')
+### NOVO: Widgets para o frame de Projeção 3D
+tk.Label(frame_projecao, text="Objeto 3D:").pack()
+combo_objeto_3d = ttk.Combobox(frame_projecao, values=list(objetos_3d.keys()), state="readonly", width=25)
+combo_objeto_3d.pack(pady=5)
+combo_objeto_3d.current(0)
+tk.Label(frame_projecao, text="Tipo de Projeção:").pack()
+combo_tipo_projecao = ttk.Combobox(frame_projecao, values=["Ortogonal - Frontal", "Perspectiva"], state="readonly", width=25)
+combo_tipo_projecao.pack(pady=5)
+combo_tipo_projecao.current(0)
+tk.Label(frame_projecao, text="Distância Câmera (d):").pack()
+entry_distancia_proj = tk.Entry(frame_projecao, width=27)
+entry_distancia_proj.pack(pady=5)
+entry_distancia_proj.insert(0, "20")
+ttk.Button(frame_projecao, text="Projetar Objeto", command=executar_projecao).pack(pady=10, fill="x", ipady=5)
+
+
+ttk.Button(main_controls_container, text="Limpar Tudo", command=lambda: limpar_tudo(manter_desenho=False)).pack(pady=(20,10), padx=10, ipady=10, fill='x')
 
 switch_mode()
 root.mainloop()
