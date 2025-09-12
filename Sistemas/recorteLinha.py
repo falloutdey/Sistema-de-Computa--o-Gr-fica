@@ -1,5 +1,5 @@
 # recorteLinha.py
-from bresenham import Bresenham
+from Sistemas.bresenham import Bresenham
 
 class RecorteLinha:
     def __init__(self, ponto_1, ponto_2, xmin, ymin, xmax, ymax):

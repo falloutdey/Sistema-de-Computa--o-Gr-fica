@@ -1,5 +1,5 @@
 # recortePoligono.py
-from polilinha import Polilinha
+from Sistemas.polilinha import Polilinha
 
 class RecortePoligono:
     def __init__(self, pts_poligono: list, xmin, ymin, xmax, ymax):

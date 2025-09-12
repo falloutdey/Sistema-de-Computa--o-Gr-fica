@@ -1,5 +1,5 @@
 # varredura.py
-from pontoCrítico import PontoCritico
+from Sistemas.pontoCrítico import PontoCritico
 
 class Varredura:
     """

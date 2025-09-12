@@ -1,5 +1,5 @@
 # polilinha.py
-from bresenham import Bresenham
+from Sistemas.bresenham import Bresenham
 
 class Polilinha:
     """

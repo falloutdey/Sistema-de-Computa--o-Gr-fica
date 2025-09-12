@@ -1,7 +1,7 @@
 # transformacao.py
 import math
 import numpy as np
-from polilinha import Polilinha
+from Sistemas.polilinha import Polilinha
 
 class Transformacao:
     """

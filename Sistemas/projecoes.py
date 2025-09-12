@@ -1,7 +1,7 @@
 # projecoes.py
 import numpy as np
 import math
-from bresenham import Bresenham
+from Sistemas.bresenham import Bresenham
 
 class Projetor3D:
     """

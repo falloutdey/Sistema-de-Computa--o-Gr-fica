@@ -1,6 +1,6 @@
 # curvas.py
 import math
-from bresenham import Bresenham
+from Sistemas.bresenham import Bresenham
 
 class Curvas:
     """
