@@ -726,6 +726,12 @@ btn_projetar_objeto = ttk.Button(frame_definir_arestas_3d, text="Projetar Objeto
 
 ttk.Button(main_controls_container, text="Limpar Tudo", command=lambda: limpar_tudo(manter_desenho=False)).pack(pady=20, padx=10, ipady=10, fill='x')
 
+dev_frame = tk.Frame(main_controls_container)
+dev_frame.pack(side=tk.BOTTOM, pady=10)
+tk.Label(dev_frame, text="Desenvolvido por:", font=("Helvetica", 8, "bold")).pack()
+tk.Label(dev_frame, text="Deydson Assunção da Costa", font=("Helvetica", 8)).pack()
+tk.Label(dev_frame, text="Dionísio Fares da Silva", font=("Helvetica", 8)).pack()
+
 switch_mode()
 toggle_distancia_camera()
 root.mainloop()
