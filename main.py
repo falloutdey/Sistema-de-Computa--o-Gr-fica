@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox
 import math
 import re
 
-import globals
+import globais
 from grid import Grid
 from interface import *
 from Sistemas.bresenham import Bresenham
@@ -30,7 +30,7 @@ class App:
         Args:
             root (tk.Tk): A janela raiz da aplicação.
         """
-        globals.init()
+        globais.init()
         self.root = root
         self.root.title("Sistema de Computação Gráfica")
 
@@ -151,81 +151,81 @@ class App:
         modo = self.current_mode.get()
 
         # Limpa a tela se for o primeiro ponto de um novo desenho
-        if not globals.pontos_selecionados and modo not in ["preenchimento", "recorte_linha", "recorte_poligono", "projecao"]:
+        if not globais.pontos_selecionados and modo not in ["preenchimento", "recorte_linha", "recorte_poligono", "projecao"]:
             self.tela.limpar_tela()
 
         # Limita o número de pontos para formas simples
         max_points = {"linha": 2, "circulo": 2, "elipse": 3}
-        if modo in max_points and len(globals.pontos_selecionados) >= max_points[modo]:
+        if modo in max_points and len(globais.pontos_selecionados) >= max_points[modo]:
             self.limpar_tudo(manter_desenho=False)
 
         # Lógica de clique específica para cada modo
         if modo == "transformacao":
-            if globals.estado_transformacao == "definindo_poligono":
-                globals.pontos_selecionados.append((grid_x, grid_y))
+            if globais.estado_transformacao == "definindo_poligono":
+                globais.pontos_selecionados.append((grid_x, grid_y))
                 self.atualizar_texto_pontos()
                 self.desenhar_poligono_para_transformacao()
         elif modo == "projecao":
             return
         elif modo == "recorte_linha":
-            if globals.estado_recorte == "definindo_janela":
-                if len(globals.pontos_selecionados) >= 2: self.limpar_tudo(manter_desenho=False)
-                globals.pontos_selecionados.append((grid_x, grid_y)); self.tela.desenhar_pixel(grid_x, grid_y, "red")
-                if len(globals.pontos_selecionados) == 1:
+            if globais.estado_recorte == "definindo_janela":
+                if len(globais.pontos_selecionados) >= 2: self.limpar_tudo(manter_desenho=False)
+                globais.pontos_selecionados.append((grid_x, grid_y)); self.tela.desenhar_pixel(grid_x, grid_y, "red")
+                if len(globais.pontos_selecionados) == 1:
                     self.get_widget('recorte_linha', 'entry_xmin').delete(0, tk.END); self.get_widget('recorte_linha', 'entry_xmin').insert(0, str(grid_x)); self.get_widget('recorte_linha', 'entry_ymin').delete(0, tk.END); self.get_widget('recorte_linha', 'entry_ymin').insert(0, str(grid_y))
-                elif len(globals.pontos_selecionados) == 2:
+                elif len(globais.pontos_selecionados) == 2:
                     self.get_widget('recorte_linha', 'entry_xmax').delete(0, tk.END); self.get_widget('recorte_linha', 'entry_xmax').insert(0, str(grid_x)); self.get_widget('recorte_linha', 'entry_ymax').delete(0, tk.END); self.get_widget('recorte_linha', 'entry_ymax').insert(0, str(grid_y))
-            elif globals.estado_recorte == "definindo_linha":
-                if len(globals.pontos_selecionados) >= 2:
-                    self.limpar_tudo(manter_desenho=True, limpar_apenas_pontos=True); self.tela.destacar_janela(**globals.janela_de_recorte)
-                globals.pontos_selecionados.append((grid_x, grid_y)); self.tela.desenhar_pixel(grid_x, grid_y, "blue")
-                if len(globals.pontos_selecionados) == 1:
+            elif globais.estado_recorte == "definindo_linha":
+                if len(globais.pontos_selecionados) >= 2:
+                    self.limpar_tudo(manter_desenho=True, limpar_apenas_pontos=True); self.tela.destacar_janela(**globais.janela_de_recorte)
+                globais.pontos_selecionados.append((grid_x, grid_y)); self.tela.desenhar_pixel(grid_x, grid_y, "blue")
+                if len(globais.pontos_selecionados) == 1:
                     self.get_widget('recorte_linha', 'entry_x0_recorte').delete(0, tk.END); self.get_widget('recorte_linha', 'entry_x0_recorte').insert(0, str(grid_x)); self.get_widget('recorte_linha', 'entry_y0_recorte').delete(0, tk.END); self.get_widget('recorte_linha', 'entry_y0_recorte').insert(0, str(grid_y))
-                elif len(globals.pontos_selecionados) == 2:
+                elif len(globais.pontos_selecionados) == 2:
                     self.get_widget('recorte_linha', 'entry_x1_recorte').delete(0, tk.END); self.get_widget('recorte_linha', 'entry_x1_recorte').insert(0, str(grid_x)); self.get_widget('recorte_linha', 'entry_y1_recorte').delete(0, tk.END); self.get_widget('recorte_linha', 'entry_y1_recorte').insert(0, str(grid_y))
                     self.desenhar_linha_original_para_recorte()
         elif modo == "recorte_poligono":
-            if globals.estado_recorte == "definindo_janela":
-                if len(globals.pontos_selecionados) >= 2: self.limpar_tudo(manter_desenho=False)
-                globals.pontos_selecionados.append((grid_x, grid_y)); self.tela.desenhar_pixel(grid_x, grid_y, "red")
-                if len(globals.pontos_selecionados) == 1:
+            if globais.estado_recorte == "definindo_janela":
+                if len(globais.pontos_selecionados) >= 2: self.limpar_tudo(manter_desenho=False)
+                globais.pontos_selecionados.append((grid_x, grid_y)); self.tela.desenhar_pixel(grid_x, grid_y, "red")
+                if len(globais.pontos_selecionados) == 1:
                     self.get_widget('recorte_poligono', 'entry_xmin_p').delete(0, tk.END); self.get_widget('recorte_poligono', 'entry_xmin_p').insert(0, str(grid_x)); self.get_widget('recorte_poligono', 'entry_ymin_p').delete(0, tk.END); self.get_widget('recorte_poligono', 'entry_ymin_p').insert(0, str(grid_y))
-                elif len(globals.pontos_selecionados) == 2:
+                elif len(globais.pontos_selecionados) == 2:
                     self.get_widget('recorte_poligono', 'entry_xmax_p').delete(0, tk.END); self.get_widget('recorte_poligono', 'entry_xmax_p').insert(0, str(grid_x)); self.get_widget('recorte_poligono', 'entry_ymax_p').delete(0, tk.END); self.get_widget('recorte_poligono', 'entry_ymax_p').insert(0, str(grid_y))
-            elif globals.estado_recorte == "definindo_poligono":
-                globals.pontos_selecionados.append((grid_x, grid_y));
+            elif globais.estado_recorte == "definindo_poligono":
+                globais.pontos_selecionados.append((grid_x, grid_y));
                 self.atualizar_texto_pontos()
                 self.desenhar_poligono_original_para_recorte()
         elif modo == "preenchimento":
-            if globals.estado_preenchimento == "escolhendo_semente":
-                if not self.ponto_esta_dentro((grid_x, grid_y), globals.poligono_para_preencher): messagebox.showwarning("Ponto Inválido", "O ponto de semente deve estar DENTRO do polígono."); return
+            if globais.estado_preenchimento == "escolhendo_semente":
+                if not self.ponto_esta_dentro((grid_x, grid_y), globais.poligono_para_preencher): messagebox.showwarning("Ponto Inválido", "O ponto de semente deve estar DENTRO do polígono."); return
                 if self.tela.checar_matriz(grid_x, grid_y) == '#000000': messagebox.showwarning("Ponto Inválido", "O ponto de semente não pode estar sobre uma borda."); return
-                self.tela.limpar_marcadores(); globals.pontos_selecionados = [(grid_x, grid_y)]; self.tela.desenhar_marcador_temporario(grid_x, grid_y, "cyan")
+                self.tela.limpar_marcadores(); globais.pontos_selecionados = [(grid_x, grid_y)]; self.tela.desenhar_marcador_temporario(grid_x, grid_y, "cyan")
                 self.get_widget('preenchimento', 'entry_p_x_fill').delete(0, tk.END); self.get_widget('preenchimento', 'entry_p_x_fill').insert(0, str(grid_x)); self.get_widget('preenchimento', 'entry_p_y_fill').delete(0, tk.END); self.get_widget('preenchimento', 'entry_p_y_fill').insert(0, str(grid_y))
-            else: globals.pontos_selecionados.append((grid_x, grid_y)); self.tela.desenhar_pixel(grid_x, grid_y, "blue"); self.atualizar_texto_pontos()
+            else: globais.pontos_selecionados.append((grid_x, grid_y)); self.tela.desenhar_pixel(grid_x, grid_y, "blue"); self.atualizar_texto_pontos()
         elif modo in ["polilinha", "varredura", "curva"]:
-            globals.pontos_selecionados.append((grid_x, grid_y)); cor = "blue"
+            globais.pontos_selecionados.append((grid_x, grid_y)); cor = "blue"
             if modo == "varredura": cor = "magenta"
             elif modo == "curva":
-                if len(globals.pontos_selecionados) == 1: cor = "green"
+                if len(globais.pontos_selecionados) == 1: cor = "green"
                 else:
-                    if len(globals.pontos_selecionados) > 2: self.tela.desenhar_pixel(globals.pontos_selecionados[-2][0], globals.pontos_selecionados[-2][1], "orange")
+                    if len(globais.pontos_selecionados) > 2: self.tela.desenhar_pixel(globais.pontos_selecionados[-2][0], globais.pontos_selecionados[-2][1], "orange")
                     cor = "red"
             self.tela.desenhar_pixel(grid_x, grid_y, cor); self.atualizar_texto_pontos()
         elif modo in ["linha", "circulo", "elipse"]:
-            globals.pontos_selecionados.append((grid_x, grid_y))
+            globais.pontos_selecionados.append((grid_x, grid_y))
             cor_ponto = {"linha": "blue", "circulo": "green", "elipse": "purple"}
             self.tela.desenhar_pixel(grid_x, grid_y, cor_ponto[modo])
             if modo == "linha":
-                if len(globals.pontos_selecionados) == 1: self.get_widget('linha', 'entry_x0').delete(0, tk.END); self.get_widget('linha', 'entry_x0').insert(0, str(grid_x)); self.get_widget('linha', 'entry_y0').delete(0, tk.END); self.get_widget('linha', 'entry_y0').insert(0, str(grid_y))
-                elif len(globals.pontos_selecionados) == 2: self.get_widget('linha', 'entry_x1').delete(0, tk.END); self.get_widget('linha', 'entry_x1').insert(0, str(grid_x)); self.get_widget('linha', 'entry_y1').delete(0, tk.END); self.get_widget('linha', 'entry_y1').insert(0, str(grid_y))
+                if len(globais.pontos_selecionados) == 1: self.get_widget('linha', 'entry_x0').delete(0, tk.END); self.get_widget('linha', 'entry_x0').insert(0, str(grid_x)); self.get_widget('linha', 'entry_y0').delete(0, tk.END); self.get_widget('linha', 'entry_y0').insert(0, str(grid_y))
+                elif len(globais.pontos_selecionados) == 2: self.get_widget('linha', 'entry_x1').delete(0, tk.END); self.get_widget('linha', 'entry_x1').insert(0, str(grid_x)); self.get_widget('linha', 'entry_y1').delete(0, tk.END); self.get_widget('linha', 'entry_y1').insert(0, str(grid_y))
             elif modo == "circulo":
-                if len(globals.pontos_selecionados) == 1: self.get_widget('circulo', 'entry_cx').delete(0, tk.END); self.get_widget('circulo', 'entry_cx').insert(0, str(grid_x)); self.get_widget('circulo', 'entry_cy').delete(0, tk.END); self.get_widget('circulo', 'entry_cy').insert(0, str(grid_y))
-                elif len(globals.pontos_selecionados) == 2: p1,p2=globals.pontos_selecionados; raio=math.sqrt((p2[0]-p1[0])**2+(p2[1]-p1[1])**2); self.get_widget('circulo', 'entry_raio').delete(0,tk.END); self.get_widget('circulo', 'entry_raio').insert(0,f"{raio:.2f}"); self.desenhar_circulo()
+                if len(globais.pontos_selecionados) == 1: self.get_widget('circulo', 'entry_cx').delete(0, tk.END); self.get_widget('circulo', 'entry_cx').insert(0, str(grid_x)); self.get_widget('circulo', 'entry_cy').delete(0, tk.END); self.get_widget('circulo', 'entry_cy').insert(0, str(grid_y))
+                elif len(globais.pontos_selecionados) == 2: p1,p2=globais.pontos_selecionados; raio=math.sqrt((p2[0]-p1[0])**2+(p2[1]-p1[1])**2); self.get_widget('circulo', 'entry_raio').delete(0,tk.END); self.get_widget('circulo', 'entry_raio').insert(0,f"{raio:.2f}"); self.desenhar_circulo()
             elif modo == "elipse":
-                if len(globals.pontos_selecionados) == 1: self.get_widget('elipse', 'entry_ex').delete(0, tk.END); self.get_widget('elipse', 'entry_ex').insert(0, str(grid_x)); self.get_widget('elipse', 'entry_ey').delete(0, tk.END); self.get_widget('elipse', 'entry_ey').insert(0, str(grid_y))
-                elif len(globals.pontos_selecionados) == 2: raio_x=abs(globals.pontos_selecionados[1][0]-globals.pontos_selecionados[0][0]); self.get_widget('elipse', 'entry_rx').delete(0,tk.END); self.get_widget('elipse', 'entry_rx').insert(0,str(raio_x))
-                elif len(globals.pontos_selecionados) == 3: raio_y=abs(globals.pontos_selecionados[2][1]-globals.pontos_selecionados[0][1]); self.get_widget('elipse', 'entry_ry').delete(0,tk.END); self.get_widget('elipse', 'entry_ry').insert(0,str(raio_y)); self.desenhar_elipse()
+                if len(globais.pontos_selecionados) == 1: self.get_widget('elipse', 'entry_ex').delete(0, tk.END); self.get_widget('elipse', 'entry_ex').insert(0, str(grid_x)); self.get_widget('elipse', 'entry_ey').delete(0, tk.END); self.get_widget('elipse', 'entry_ey').insert(0, str(grid_y))
+                elif len(globais.pontos_selecionados) == 2: raio_x=abs(globais.pontos_selecionados[1][0]-globais.pontos_selecionados[0][0]); self.get_widget('elipse', 'entry_rx').delete(0,tk.END); self.get_widget('elipse', 'entry_rx').insert(0,str(raio_x))
+                elif len(globais.pontos_selecionados) == 3: raio_y=abs(globais.pontos_selecionados[2][1]-globais.pontos_selecionados[0][1]); self.get_widget('elipse', 'entry_ry').delete(0,tk.END); self.get_widget('elipse', 'entry_ry').insert(0,str(raio_y)); self.desenhar_elipse()
 
     def ponto_esta_dentro(self, ponto, poligono):
         """
@@ -261,12 +261,12 @@ class App:
         
         try: x=int(entry_x.get()); y=int(entry_y.get())
         except ValueError: messagebox.showerror("Entrada Inválida", "As coordenadas do ponto devem ser números inteiros."); return
-        if not globals.pontos_selecionados and modo not in ["preenchimento", "recorte_linha", "recorte_poligono"]: self.tela.limpar_tela()
+        if not globais.pontos_selecionados and modo not in ["preenchimento", "recorte_linha", "recorte_poligono"]: self.tela.limpar_tela()
 
-        globals.pontos_selecionados.append((x, y))
+        globais.pontos_selecionados.append((x, y))
 
         if modo == "recorte_poligono":
-            if globals.estado_recorte == "definindo_poligono":
+            if globais.estado_recorte == "definindo_poligono":
                 self.atualizar_texto_pontos()
                 self.desenhar_poligono_original_para_recorte()
         elif modo == "transformacao":
@@ -275,10 +275,10 @@ class App:
             cor = "blue"
             if modo=="varredura": cor="magenta"
             elif modo=="curva":
-                if len(globals.pontos_selecionados)==1: cor="green"
+                if len(globais.pontos_selecionados)==1: cor="green"
                 else: cor="red"
             self.tela.desenhar_pixel(x,y,cor)
-            if modo=="curva" and len(globals.pontos_selecionados)>2: p_anterior=globals.pontos_selecionados[-2]; self.tela.desenhar_pixel(p_anterior[0],p_anterior[1],"orange")
+            if modo=="curva" and len(globais.pontos_selecionados)>2: p_anterior=globais.pontos_selecionados[-2]; self.tela.desenhar_pixel(p_anterior[0],p_anterior[1],"orange")
 
         self.atualizar_texto_pontos(); entry_x.delete(0,tk.END); entry_y.delete(0,tk.END)
 
@@ -291,7 +291,7 @@ class App:
             cor (str): A cor do polígono.
         """
         self.tela.limpar_tela()
-        pontos = globals.pontos_selecionados if globals.estado_transformacao == "definindo_poligono" else globals.poligono_para_transformar
+        pontos = globais.pontos_selecionados if globais.estado_transformacao == "definindo_poligono" else globais.poligono_para_transformar
         if len(pontos) >= 2:
             polilinha = Polilinha(pontos, fechar=True)
             self.tela.desenhar(polilinha.saida, cor)
@@ -303,11 +303,11 @@ class App:
         """
         Finaliza a definição do polígono para transformação, mudando o estado da aplicação.
         """
-        if len(globals.pontos_selecionados) < 3:
+        if len(globais.pontos_selecionados) < 3:
             messagebox.showerror("Polígono Inválido", "São necessários pelo menos 3 pontos para formar um polígono.")
             return
-        globals.poligono_para_transformar = list(globals.pontos_selecionados)
-        globals.estado_transformacao = "aplicando_transformacao"
+        globais.poligono_para_transformar = list(globais.pontos_selecionados)
+        globais.estado_transformacao = "aplicando_transformacao"
         self.switch_transform_state()
         self.atualizar_texto_pontos()
 
@@ -315,14 +315,14 @@ class App:
         """
         Aplica a transformação de translação ao polígono.
         """
-        if not globals.poligono_para_transformar: messagebox.showwarning("Nenhum Polígono", "Finalize um polígono primeiro."); return
+        if not globais.poligono_para_transformar: messagebox.showwarning("Nenhum Polígono", "Finalize um polígono primeiro."); return
         try:
             dx = int(self.get_widget('transformacao', 'entry_dx_transf').get())
             dy = int(self.get_widget('transformacao', 'entry_dy_transf').get())
         except ValueError: messagebox.showerror("Entrada Inválida", "Os valores de translação devem ser inteiros."); return
 
-        transformador = Transformacao(globals.poligono_para_transformar)
-        globals.poligono_para_transformar = transformador.translacao(dx, dy)
+        transformador = Transformacao(globais.poligono_para_transformar)
+        globais.poligono_para_transformar = transformador.translacao(dx, dy)
         self.desenhar_poligono_para_transformacao(cor='green')
         self.atualizar_texto_pontos()
 
@@ -351,7 +351,7 @@ class App:
         """
         Aplica a transformação de escalonamento ao polígono.
         """
-        if not globals.poligono_para_transformar: messagebox.showwarning("Nenhum Polígono", "Finalize um polígono primeiro."); return
+        if not globais.poligono_para_transformar: messagebox.showwarning("Nenhum Polígono", "Finalize um polígono primeiro."); return
 
         pivo = self.get_pivo_from_combobox(self.get_widget('transformacao', 'combo_pivo_escalonamento'))
         if pivo is None: return
@@ -361,20 +361,20 @@ class App:
             sy = float(self.get_widget('transformacao', 'entry_sy_transf').get())
         except ValueError: messagebox.showerror("Entrada Inválida", "Fatores de escala devem ser números."); return
 
-        transformador = Transformacao(globals.poligono_para_transformar)
+        transformador = Transformacao(globais.poligono_para_transformar)
         pontos_transformados_rasterizados = transformador.escalonamento(sx, sy, pivo=pivo)
 
         self.tela.limpar_tela()
         self.tela.desenhar(pontos_transformados_rasterizados, 'green')
 
-        globals.poligono_para_transformar = transformador.entrada
+        globais.poligono_para_transformar = transformador.entrada
         self.atualizar_texto_pontos()
 
     def aplicar_rotacao(self):
         """
         Aplica a transformação de rotação ao polígono.
         """
-        if not globals.poligono_para_transformar: messagebox.showwarning("Nenhum Polígono", "Finalize um polígono primeiro."); return
+        if not globais.poligono_para_transformar: messagebox.showwarning("Nenhum Polígono", "Finalize um polígono primeiro."); return
 
         pivo = self.get_pivo_from_combobox(self.get_widget('transformacao', 'combo_pivo_rotacao'))
         if pivo is None: return
@@ -383,13 +383,13 @@ class App:
             angulo = float(self.get_widget('transformacao', 'entry_angulo_transf').get())
         except ValueError: messagebox.showerror("Entrada Inválida", "O ângulo deve ser um número."); return
 
-        transformador = Transformacao(globals.poligono_para_transformar)
+        transformador = Transformacao(globais.poligono_para_transformar)
         pontos_transformados_rasterizados = transformador.rotacao(angulo, pivo=pivo)
 
         self.tela.limpar_tela()
         self.tela.desenhar(pontos_transformados_rasterizados, 'green')
 
-        globals.poligono_para_transformar = transformador.entrada
+        globais.poligono_para_transformar = transformador.entrada
         self.atualizar_texto_pontos()
 
     def desenhar_linha(self):
@@ -404,8 +404,8 @@ class App:
         """
         Desenha uma polilinha (aberta) na tela.
         """
-        if len(globals.pontos_selecionados)<2: messagebox.showwarning("Pontos Insuficientes", "São necessários pelo menos 2 pontos para desenhar uma polilinha."); return
-        pontos_para_desenhar = list(globals.pontos_selecionados); self.tela.limpar_tela()
+        if len(globais.pontos_selecionados)<2: messagebox.showwarning("Pontos Insuficientes", "São necessários pelo menos 2 pontos para desenhar uma polilinha."); return
+        pontos_para_desenhar = list(globais.pontos_selecionados); self.tela.limpar_tela()
         polilinha=Polilinha(pontos_para_desenhar, fechar=False); self.tela.desenhar(polilinha.saida,'#000000')
         for ponto in pontos_para_desenhar: self.tela.desenhar_pixel(ponto[0],ponto[1],"blue")
 
@@ -431,8 +431,8 @@ class App:
         """
         Desenha uma curva de Bézier na tela.
         """
-        if len(globals.pontos_selecionados) < 3: messagebox.showwarning("Pontos Insuficientes", "São necessários pelo menos 3 pontos de controle para uma curva."); return
-        pontos_para_desenhar = list(globals.pontos_selecionados); self.tela.limpar_tela()
+        if len(globais.pontos_selecionados) < 3: messagebox.showwarning("Pontos Insuficientes", "São necessários pelo menos 3 pontos de controle para uma curva."); return
+        pontos_para_desenhar = list(globais.pontos_selecionados); self.tela.limpar_tela()
         curva = Curvas(pontos_para_desenhar); self.tela.desenhar(curva.saida, '#000000')
         for i, ponto in enumerate(pontos_para_desenhar):
             if i == 0: cor = "green"
@@ -444,10 +444,10 @@ class App:
         """
         Finaliza a definição do polígono para preenchimento e avança para a etapa de seleção da semente.
         """
-        if len(globals.pontos_selecionados) < 3: messagebox.showerror("Polígono Inválido", "São necessários pelo menos 3 pontos para formar um polígono."); return
-        self.tela.limpar_tela(); globals.poligono_para_preencher = list(globals.pontos_selecionados)
-        poligono_fechado = Polilinha(globals.poligono_para_preencher, fechar=True); self.tela.desenhar(poligono_fechado.saida, '#000000')
-        globals.estado_preenchimento = "escolhendo_semente"; globals.pontos_selecionados.clear(); self.atualizar_texto_pontos(); self.switch_fill_state()
+        if len(globais.pontos_selecionados) < 3: messagebox.showerror("Polígono Inválido", "São necessários pelo menos 3 pontos para formar um polígono."); return
+        self.tela.limpar_tela(); globais.poligono_para_preencher = list(globais.pontos_selecionados)
+        poligono_fechado = Polilinha(globais.poligono_para_preencher, fechar=True); self.tela.desenhar(poligono_fechado.saida, '#000000')
+        globais.estado_preenchimento = "escolhendo_semente"; globais.pontos_selecionados.clear(); self.atualizar_texto_pontos(); self.switch_fill_state()
 
     def executar_preenchimento(self):
         """
@@ -456,16 +456,16 @@ class App:
         try: ponto_semente = (int(self.get_widget('preenchimento', 'entry_p_x_fill').get()), int(self.get_widget('preenchimento', 'entry_p_y_fill').get())); cor = self.get_widget('preenchimento', 'entry_cor_preenchimento').get()
         except ValueError: messagebox.showerror("Entrada Inválida", "As coordenadas do ponto de semente devem ser números inteiros."); return
         if not (cor.startswith('#') and len(cor) == 7): messagebox.showerror("Cor Inválida", "A cor deve estar no formato #RRGGBB."); return
-        if not globals.poligono_para_preencher: messagebox.showwarning("Nenhum Polígono", "Primeiro, finalize um polígono para depois o preencher."); return
-        if not self.ponto_esta_dentro(ponto_semente, globals.poligono_para_preencher): messagebox.showwarning("Ponto Inválido", "O ponto de semente deve estar DENTRO do polígono."); return
+        if not globais.poligono_para_preencher: messagebox.showwarning("Nenhum Polígono", "Primeiro, finalize um polígono para depois o preencher."); return
+        if not self.ponto_esta_dentro(ponto_semente, globais.poligono_para_preencher): messagebox.showwarning("Ponto Inválido", "O ponto de semente deve estar DENTRO do polígono."); return
         self.tela.limpar_marcadores(); PreenchimentoRecursivo(ponto_semente, cor, self.tela); self.limpar_tudo(manter_desenho=True, limpar_apenas_pontos=True)
 
     def executar_varredura(self):
         """
         Executa o algoritmo de preenchimento por varredura (Scanline).
         """
-        if len(globals.pontos_selecionados) < 3: messagebox.showwarning("Pontos Insuficientes", "São necessários pelo menos 3 pontos para preencher com varredura."); return
-        pontos_para_desenhar = list(globals.pontos_selecionados); self.tela.limpar_tela()
+        if len(globais.pontos_selecionados) < 3: messagebox.showwarning("Pontos Insuficientes", "São necessários pelo menos 3 pontos para preencher com varredura."); return
+        pontos_para_desenhar = list(globais.pontos_selecionados); self.tela.limpar_tela()
         preenchimento = Varredura(pontos_para_desenhar); self.tela.desenhar(preenchimento.saida, "#FFA500")
         borda = Polilinha(pontos_para_desenhar, fechar=True); self.tela.desenhar(borda.saida, '#000000')
 
@@ -476,9 +476,9 @@ class App:
         try: x_coords = [int(self.get_widget('recorte_linha', 'entry_xmin').get()), int(self.get_widget('recorte_linha', 'entry_xmax').get())]; y_coords = [int(self.get_widget('recorte_linha', 'entry_ymin').get()), int(self.get_widget('recorte_linha', 'entry_ymax').get())]
         except ValueError: messagebox.showerror("Entrada Inválida", "As coordenadas da janela devem ser números inteiros."); return
         xmin, xmax = min(x_coords), max(x_coords); ymin, ymax = min(y_coords), max(y_coords)
-        globals.janela_de_recorte = {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
-        self.tela.limpar_tela(); self.tela.destacar_janela(**globals.janela_de_recorte)
-        globals.estado_recorte = "definindo_linha"; globals.pontos_selecionados.clear(); self.switch_clip_state()
+        globais.janela_de_recorte = {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
+        self.tela.limpar_tela(); self.tela.destacar_janela(**globais.janela_de_recorte)
+        globais.estado_recorte = "definindo_linha"; globais.pontos_selecionados.clear(); self.switch_clip_state()
 
     def desenhar_linha_original_para_recorte(self):
         """
@@ -492,11 +492,11 @@ class App:
         """
         Executa o algoritmo de recorte de linha de Cohen-Sutherland.
         """
-        if not globals.janela_de_recorte: messagebox.showwarning("Janela não Definida", "Primeiro, defina uma janela de recorte."); return
+        if not globais.janela_de_recorte: messagebox.showwarning("Janela não Definida", "Primeiro, defina uma janela de recorte."); return
         try: p1 = (int(self.get_widget('recorte_linha', 'entry_x0_recorte').get()), int(self.get_widget('recorte_linha', 'entry_y0_recorte').get())); p2 = (int(self.get_widget('recorte_linha', 'entry_x1_recorte').get()), int(self.get_widget('recorte_linha', 'entry_y1_recorte').get()))
         except ValueError: messagebox.showerror("Entrada Inválida", "As coordenadas da linha devem ser números inteiros."); return
-        self.tela.limpar_tela(); self.tela.destacar_janela(**globals.janela_de_recorte)
-        recorte = RecorteLinha(p1, p2, **globals.janela_de_recorte); self.tela.desenhar(recorte.saida, '#000000')
+        self.tela.limpar_tela(); self.tela.destacar_janela(**globais.janela_de_recorte)
+        recorte = RecorteLinha(p1, p2, **globais.janela_de_recorte); self.tela.desenhar(recorte.saida, '#000000')
 
     def finalizar_janela_para_recorte_poligono(self):
         """
@@ -506,30 +506,30 @@ class App:
             x_coords = [int(self.get_widget('recorte_poligono', 'entry_xmin_p').get()), int(self.get_widget('recorte_poligono', 'entry_xmax_p').get())]; y_coords = [int(self.get_widget('recorte_poligono', 'entry_ymin_p').get()), int(self.get_widget('recorte_poligono', 'entry_ymax_p').get())]
         except ValueError: messagebox.showerror("Entrada Inválida", "As coordenadas da janela devem ser números inteiros."); return
         xmin, xmax = min(x_coords), max(x_coords); ymin, ymax = min(y_coords), max(y_coords)
-        globals.janela_de_recorte = {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
-        self.tela.limpar_tela(); self.tela.destacar_janela(**globals.janela_de_recorte)
-        globals.estado_recorte = "definindo_poligono"; globals.pontos_selecionados.clear(); self.atualizar_texto_pontos(); self.switch_clip_state()
+        globais.janela_de_recorte = {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
+        self.tela.limpar_tela(); self.tela.destacar_janela(**globais.janela_de_recorte)
+        globais.estado_recorte = "definindo_poligono"; globais.pontos_selecionados.clear(); self.atualizar_texto_pontos(); self.switch_clip_state()
 
     def desenhar_poligono_original_para_recorte(self):
         """
         Desenha o polígono original (antes do recorte) em tom de cinza.
         """
         self.tela.limpar_tela()
-        self.tela.destacar_janela(**globals.janela_de_recorte)
-        if len(globals.pontos_selecionados) >= 2:
-            polilinha_original = Polilinha(globals.pontos_selecionados, fechar=True)
+        self.tela.destacar_janela(**globais.janela_de_recorte)
+        if len(globais.pontos_selecionados) >= 2:
+            polilinha_original = Polilinha(globais.pontos_selecionados, fechar=True)
             self.tela.desenhar(polilinha_original.saida, 'lightgrey')
-        for ponto in globals.pontos_selecionados:
+        for ponto in globais.pontos_selecionados:
             self.tela.desenhar_pixel(ponto[0], ponto[1], "blue")
 
     def executar_recorte_poligono(self):
         """
         Executa o algoritmo de recorte de polígono de Sutherland-Hodgman.
         """
-        if not globals.janela_de_recorte: messagebox.showwarning("Janela não Definida", "Primeiro, defina uma janela de recorte."); return
-        if len(globals.pontos_selecionados) < 3: messagebox.showwarning("Pontos Insuficientes", "São necessários pelo menos 3 pontos para um polígono."); return
-        self.tela.limpar_tela(); self.tela.destacar_janela(**globals.janela_de_recorte)
-        recorte = RecortePoligono(globals.pontos_selecionados, **globals.janela_de_recorte); self.tela.desenhar(recorte.saida, '#000000')
+        if not globais.janela_de_recorte: messagebox.showwarning("Janela não Definida", "Primeiro, defina uma janela de recorte."); return
+        if len(globais.pontos_selecionados) < 3: messagebox.showwarning("Pontos Insuficientes", "São necessários pelo menos 3 pontos para um polígono."); return
+        self.tela.limpar_tela(); self.tela.destacar_janela(**globais.janela_de_recorte)
+        recorte = RecortePoligono(globais.pontos_selecionados, **globais.janela_de_recorte); self.tela.desenhar(recorte.saida, '#000000')
 
     def limpar_tudo(self, manter_desenho=False, limpar_apenas_pontos=False):
         """
@@ -553,7 +553,7 @@ class App:
                         widget.set('')
                         widget['values'] = []
         
-        globals.init()
+        globais.init()
 
         if self.current_mode.get() == "transformacao": self.switch_transform_state()
         if self.current_mode.get() == "projecao": self.switch_projection_state()
@@ -576,7 +576,7 @@ class App:
             widget.config(state=tk.NORMAL)
             widget.delete('1.0', tk.END)
 
-            pontos_a_exibir = globals.pontos_selecionados if modo != "transformacao" or globals.estado_transformacao == "definindo_poligono" else globals.poligono_para_transformar
+            pontos_a_exibir = globais.pontos_selecionados if modo != "transformacao" or globais.estado_transformacao == "definindo_poligono" else globais.poligono_para_transformar
             pontos_formatados = [[round(p[0]), round(p[1])] for p in pontos_a_exibir]
 
             for ponto in pontos_formatados:
@@ -587,7 +587,7 @@ class App:
             combo_pivo_escalonamento = self.get_widget('transformacao', 'combo_pivo_escalonamento')
             combo_pivo_rotacao = self.get_widget('transformacao', 'combo_pivo_rotacao')
 
-            formatted_points = [f"({int(p[0])}, {int(p[1])})" for p in globals.poligono_para_transformar]
+            formatted_points = [f"({int(p[0])}, {int(p[1])})" for p in globais.poligono_para_transformar]
             combo_pivo_escalonamento['values'] = formatted_points
             combo_pivo_rotacao['values'] = formatted_points
             if formatted_points:
@@ -601,7 +601,7 @@ class App:
         """
         Alterna entre os diferentes modos de desenho, exibindo o painel de controle correto.
         """
-        globals.init()
+        globais.init()
         self.limpar_tudo(manter_desenho=False)
         modo = self.current_mode.get()
 
@@ -621,7 +621,7 @@ class App:
         """
         Alterna a visibilidade dos sub-frames no modo de preenchimento.
         """
-        if globals.estado_preenchimento == "desenhando_poligono":
+        if globais.estado_preenchimento == "desenhando_poligono":
             self.get_widget('preenchimento', 'frame_desenho_poligono').pack(fill="x")
             self.get_widget('preenchimento', 'frame_escolha_semente').pack_forget()
         else:
@@ -634,14 +634,14 @@ class App:
         """
         modo = self.current_mode.get()
         if modo == "recorte_linha":
-            if globals.estado_recorte == "definindo_janela":
+            if globais.estado_recorte == "definindo_janela":
                 self.get_widget('recorte_linha', 'frame_definir_janela').pack(fill="x")
                 self.get_widget('recorte_linha', 'frame_definir_linha').pack_forget()
             else:
                 self.get_widget('recorte_linha', 'frame_definir_janela').pack_forget()
                 self.get_widget('recorte_linha', 'frame_definir_linha').pack(fill="x")
         elif modo == "recorte_poligono":
-            if globals.estado_recorte == "definindo_janela":
+            if globais.estado_recorte == "definindo_janela":
                 self.get_widget('recorte_poligono', 'frame_definir_janela_p').pack(fill="x")
                 self.get_widget('recorte_poligono', 'frame_definir_poligono').pack_forget()
             else:
@@ -652,7 +652,7 @@ class App:
         """
         Alterna a visibilidade dos sub-frames no modo de transformação.
         """
-        if globals.estado_transformacao == "definindo_poligono":
+        if globais.estado_transformacao == "definindo_poligono":
             self.get_widget('transformacao', 'frame_add_ponto_transf').pack(fill="x")
             self.get_widget('transformacao', 'frame_opcoes_transf').pack_forget()
         else:
@@ -663,7 +663,7 @@ class App:
         """
         Alterna a visibilidade dos sub-frames no modo de projeção 3D.
         """
-        if globals.estado_projecao == "definindo_vertices":
+        if globais.estado_projecao == "definindo_vertices":
             self.get_widget('projecao', 'frame_definir_vertices_3d').pack(fill='x')
             self.get_widget('projecao', 'frame_definir_arestas_3d').pack_forget()
         else:
@@ -678,12 +678,12 @@ class App:
             x = int(self.get_widget('projecao', 'entry_vertice_x').get())
             y = int(self.get_widget('projecao', 'entry_vertice_y').get())
             z = int(self.get_widget('projecao', 'entry_vertice_z').get())
-            globals.vertices_3d_selecionados.append([x, y, z])
+            globais.vertices_3d_selecionados.append([x, y, z])
 
             texto_vertices_3d = self.get_widget('projecao', 'texto_vertices_3d')
             texto_vertices_3d.config(state=tk.NORMAL)
             texto_vertices_3d.delete('1.0', tk.END)
-            for i, v in enumerate(globals.vertices_3d_selecionados):
+            for i, v in enumerate(globais.vertices_3d_selecionados):
                 texto_vertices_3d.insert(tk.END, f"V{i}: ({v[0]}, {v[1]}, {v[2]})\n")
             texto_vertices_3d.config(state=tk.DISABLED)
 
@@ -699,12 +699,12 @@ class App:
         """
         Finaliza a definição de vértices e avança para a definição de arestas.
         """
-        if len(globals.vertices_3d_selecionados) < 2:
+        if len(globais.vertices_3d_selecionados) < 2:
             messagebox.showwarning("Vértices Insuficientes", "Adicione pelo menos 2 vértices.")
             return
-        globals.estado_projecao = "definindo_arestas"
+        globais.estado_projecao = "definindo_arestas"
 
-        opcoes_vertices = [f"V{i}: ({v[0]}, {v[1]}, {v[2]})" for i, v in enumerate(globals.vertices_3d_selecionados)]
+        opcoes_vertices = [f"V{i}: ({v[0]}, {v[1]}, {v[2]})" for i, v in enumerate(globais.vertices_3d_selecionados)]
         combo_aresta_de = self.get_widget('projecao', 'combo_aresta_de')
         combo_aresta_para = self.get_widget('projecao', 'combo_aresta_para')
         combo_aresta_de['values'] = opcoes_vertices
@@ -734,13 +734,13 @@ class App:
                 return
 
             aresta = sorted([idx_de, idx_para])
-            if aresta not in globals.arestas_3d_selecionadas:
-                globals.arestas_3d_selecionadas.append(aresta)
+            if aresta not in globais.arestas_3d_selecionadas:
+                globais.arestas_3d_selecionadas.append(aresta)
                 
                 texto_arestas_3d = self.get_widget('projecao', 'texto_arestas_3d')
                 texto_arestas_3d.config(state=tk.NORMAL)
                 texto_arestas_3d.delete('1.0', tk.END)
-                for a in globals.arestas_3d_selecionadas:
+                for a in globais.arestas_3d_selecionadas:
                     texto_arestas_3d.insert(tk.END, f"Aresta: (V{a[0]} -- V{a[1]})\n")
                 texto_arestas_3d.config(state=tk.DISABLED)
             else:
@@ -758,7 +758,7 @@ class App:
             messagebox.showerror("Seleção Inválida", "Por favor, selecione um tipo de projeção.")
             return
 
-        projetor = Projetor3D(globals.vertices_3d_selecionados, globals.arestas_3d_selecionadas)
+        projetor = Projetor3D(globais.vertices_3d_selecionados, globais.arestas_3d_selecionadas)
 
         if tipo_projecao == "Ortogonal":
             vertices_2d = projetor.projetar_ortogonal()
