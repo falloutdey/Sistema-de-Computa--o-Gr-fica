@@ -35,4 +35,4 @@ missing module named 'Sistemas.polilinha' - imported by C:\Users\deyds\Sistema-d
 missing module named Sistemas - imported by C:\Users\deyds\Sistema-de-Computa--o-Gr-fica\main.py (top-level)
 missing module named interface - imported by C:\Users\deyds\Sistema-de-Computa--o-Gr-fica\main.py (top-level)
 missing module named grid - imported by C:\Users\deyds\Sistema-de-Computa--o-Gr-fica\main.py (top-level)
-missing module named globals - imported by C:\Users\deyds\Sistema-de-Computa--o-Gr-fica\main.py (top-level)
+missing module named globais - imported by C:\Users\deyds\Sistema-de-Computa--o-Gr-fica\main.py (top-level)

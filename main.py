@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox
 import math
 import re
 
-import globais
+import appGlobals as globais
 from grid import Grid
 from interface import *
 from Sistemas.bresenham import Bresenham
